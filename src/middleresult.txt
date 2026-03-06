@@ -1,0 +1,1684 @@
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : NCCN Guidelines Category of Evidence for omitting lymphadenectomy in clinically early-stage, Grade 3 endometrioid endometrial cancer. : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrioid endometrial cancer lymphadenectomy', 'filter': '{"conditions": ["endometrial cancer"], "interventions": ["lymphadenectomy"], "phases": ["Phase 3", "Phase 4"]}', 'post_filter': '{"fields": ["brief_title", "official_title", "study_design_info", "eligibility", "detailed_description"], "keywords": ["early stage", "grade 3", "clinically early-stage"]}'}}] 
+
+ Tool and tool query in subquery : ESMO 2024 or NCCN 2025 guidelines for adjuvant chemotherapy and radiation therapy (external beam vs. brachytherapy only) in Stage I-II p53 abnormal (p53abn) molecular subtype endometrial cancer. : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'diseaseName': 'endometrial cancer'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer p53 abnormal adjuvant chemotherapy radiation therapy', 'filter': 'phase:3 AND status:COMPLETED'}}] 
+
+ Tool and tool query in subquery : NCCN recommendation and supporting trial (e.g., GOG-258, PORTEC-3) for adjuvant carboplatin/paclitaxel with or without radiotherapy in high-risk endometrioid carcinoma. : 
+
+ [] 
+
+ Tool and tool query in subquery : Evidence from KEYNOTE-775 trial: Is lenvatinib plus pembrolizumab recommended for maintenance therapy in MMR proficient (pMMR), p53 abnormal endometrial cancer? : 
+
+ [{'tool_name': 'get_study', 'tool_input': {'nct_id': 'NCT03517449', 'format': 'json'}}, {'tool_name': 'clinvar_query_variant_significance', 'tool_input': {'refseqid': 'NP_000537.3', 'variant': 'R273H'}}] 
+
+ Tool and tool query in subquery : NCCN guidelines on molecular classification (ProMisE): Required workup (POLE, MMR, p53) and corresponding first-line adjuvant therapy recommendations for the 'p53abn' molecular subgroup. : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrial cancer'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'POLE'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer p53abn adjuvant therapy', 'filter': {'condition': 'Endometrial Neoplasms', 'intervention': 'chemotherapy'}}}] 
+
+ Tool and tool query in subquery : 2025 FIGO or ESMO guideline updates on the management of high-intermediate risk and high-risk endometrial cancer: Is vaginal cuff brachytherapy alone sufficient for Grade 3, p53abn tumors? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrial cancer'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'EFO_0001079', 'startDate': '2025-01-01', 'endDate': '2025-12-31'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer brachytherapy', 'filter': {'condition': 'endometrial cancer', 'intervention': 'brachytherapy'}}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+
+*   **Decision Point 1**: Surgical Management (Total hysterectomy with BSO, no lymph node dissection).
+    *   **Guideline Alignment**: Cannot be verified.
+    *   **Evidence Source**: No evidence retrieved for comparison.
+    *   **Evidence Level**: Not applicable.
+
+*   **Decision Point 2**: Adjuvant Systemic Therapy (6 cycles of Carboplatin/Paclitaxel).
+    *   **Guideline Alignment**: Cannot be verified.
+    *   **Evidence Source**: No evidence retrieved for comparison.
+    *   **Evidence Level**: Not applicable.
+
+*   **Decision Point 3**: Adjuvant Radiation Therapy (Vaginal brachytherapy ONLY, no external beam radiation).
+    *   **Guideline Alignment**: Cannot be verified.
+    *   **Evidence Source**: No evidence retrieved for comparison.
+    *   **Evidence Level**: Not applicable.
+
+*   **Decision Point 4**: Maintenance Therapy (Lenvatinib + Pembrolizumab based on p53 abnormality).
+    *   **Guideline Alignment**: Cannot be verified. **PRELIMINARY WARNING FLAG:** This is a highly specific and non-standard recommendation based solely on a p53 abnormality. This requires explicit guideline or trial support for validation.
+    *   **Evidence Source**: No evidence retrieved for comparison.
+    *   **Evidence Level**: Not applicable.
+
+## Verification Gaps
+The audit cannot proceed without access to current, relevant clinical guidelines. Specific missing evidence includes:
+1.  Guidelines for the surgical staging of FIGO Grade 3 endometrioid endometrial carcinoma (specifically, indications for lymph node dissection).
+2.  Guidelines for adjuvant therapy (chemotherapy and/or radiation) for high-grade endometrioid carcinoma with the specified molecular profile (POLE-wt, p53abn, MMR-p).
+3.  Evidence supporting the use of adjuvant vaginal cuff brachytherapy alone (vs. combined with external beam radiation) for this patient's risk stratum.
+4.  Any evidence or guideline recommendation supporting the use of lenvatinib + pembrolizumab as maintenance therapy in this molecular subset (p53abn) of endometrial cancer. This is a critical gap.
+
+## Strategy for Next Step
+To fill the gaps, the following specific evidence must be retrieved and reviewed:
+1.  Search for the most recent **National Comprehensive Cancer Network (NCCN) Guidelines for Uterine Neoplasms**.
+2.  Search for the most recent **European Society for Medical Oncology (ESMO) guidelines for Endometrial Cancer**.
+3.  Search for key clinical trial publications that define standard adjuvant therapy for high-risk endometrial cancer (e.g., **GOG-258**, **PORTEC-3**, **GOG-249**).
+4.  Search specifically for trial data or guideline recommendations on **targeted maintenance therapy** (e.g., **KEYNOTE-775**, **NRG-GY018**) to see if the lenvatinib/pembrolizumab combination is indicated in the adjuvant/consolidation setting for this molecular subtype.
+
+## References
+*No sources have been provided or retrieved yet.* 
+Iteration : 1 
+
+ Tool and tool query in subquery : NCCN Endometrial Cancer guidelines 2025 lymph node dissection omission for Grade 3 endometrioid adenocarcinoma pre-op imaging negative evidence category : 
+
+ [] 
+
+ Tool and tool query in subquery : NCCN Category of Evidence adjuvant carboplatin paclitaxel for Stage I-II FIGO Grade 3 p53 abnormal endometrial cancer : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant carboplatin paclitaxel stage I stage II grade 3 p53'}}] 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and recommendation (e.g., Category 1, 2A) for performing or omitting lymph node dissection in clinical stage I-II endometrioid endometrial cancer with high-grade features (Grade 3)? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrioid endometrial cancer'}}] 
+
+ Tool and tool query in subquery : Are there any new 2024 or 2025 NCCN/ESMO guideline updates that recommend Lenvatinib + Pembrolizumab as adjuvant maintenance therapy for early-stage endometrial cancer with p53 mutation but MMR proficient status? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'diseaseName': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib pembrolizumab endometrial cancer adjuvant', 'filter': 'phase:PHASE3|PHASE2,status:RECRUITING|ACTIVE_NOT_RECRUITING|COMPLETED,study_type:INTERVENTIONAL'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'Lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'Pembrolizumab'}}] 
+
+ Tool and tool query in subquery : For a patient with p53 abnormal (mutated) and MMR proficient endometrial cancer, does the KEYNOTE-775 trial or other major evidence support the use of Lenvatinib + Pembrolizumab in the adjuvant (non-advanced) setting? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrial cancer'}}, {'tool_name': 'get_study', 'tool_input': {'nct_id': 'NCT03517449', 'format': 'json'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'Lenvatinib Pembrolizumab adjuvant endometrial cancer', 'filter': '{"overallStatus": "COMPLETED", "studyType": "INTERVENTIONAL"}'}}] 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence for adjuvant chemotherapy (Carboplatin/Paclitaxel) followed by vaginal brachytherapy alone (without external beam radiation) for stage I-II endometrioid endometrial cancer, Grade 3? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant chemotherapy carboplatin paclitaxel brachytherapy', 'filter': 'phase:phase3,phase2'}}] 
+
+ Tool and tool query in subquery : Does the NCCN guideline recommend a different adjuvant treatment pathway (e.g., chemotherapy, radiation, or both) for patients with endometrioid carcinoma, Grade 3, and specific molecular profiles like p53 abnormal? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrioid carcinoma'}}] 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : What is the NCCN guideline recommendation and category of evidence for lymph node dissection in clinical Stage I endometrioid carcinoma, Grade 3? Is omission based solely on pre-op imaging supported? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'diseaseName': 'endometrioid carcinoma'}}] 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence for adjuvant carboplatin and paclitaxel chemotherapy in stage I endometrioid endometrial cancer with high-grade (Grade 3) histology? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'adjuvant carboplatin paclitaxel stage I endometrial cancer grade 3', 'filter': 'condition:Endometrial Cancer|intervention:Carboplatin|intervention:Paclitaxel'}}] 
+
+ Tool and tool query in subquery : According to recent (2024-2025) NCCN or ESMO guidelines, is adjuvant vaginal brachytherapy alone considered sufficient treatment for stage I, Grade 3 endometrioid adenocarcinoma, or is external beam radiation therapy (EBRT) recommended? : 
+
+ [] 
+
+ Tool and tool query in subquery : What is the FDA approval and NCCN Category of Evidence for Lenvatinib + Pembrolizumab as adjuvant maintenance therapy for early-stage endometrial cancer with p53 abnormal (high), MMR-proficient, POLE wild-type molecular profile? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'Lenvatinib Pembrolizumab endometrial cancer adjuvant maintenance', 'filter': 'Condition:endometrial cancer, Intervention:lenvatinib, Intervention:pembrolizumab'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : Based on the molecular classification (POLE wild-type, p53 abnormal, MMR proficient), what is the NCCN-preferred adjuvant treatment pathway for stage I-II endometrioid adenocarcinoma, Grade 3? : 
+
+ [] 
+
+ Tool and tool query in subquery : Are there any 2024-2025 NCCN or ESMO guideline updates specifically addressing treatment for 'p53 abnormal' endometrial carcinomas that change the recommendation for systemic therapy or radiation? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrial carcinoma'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': None, 'additionalFilters': {'year': '2024,2025', 'filter': 'guideline,review'}}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+
+**Note:** The audit cannot be performed as specified. The "Retrieved Evidence" field is empty, stating "*No specific facts or information were found for the provided query.*" Therefore, no comparison or verification against guidelines is possible. The following assessment is based solely on general oncological principles and cannot be graded with evidence levels (e.g., NCCN Category 1, 2A) due to the complete absence of cited sources.
+
+- **Decision Point 1**: Surgery – Total hysterectomy with bilateral salpingo-oophorectomy without lymph node dissection.
+    - **Guideline Alignment**: Cannot be verified.
+    - **Evidence Source**: No source provided for verification.
+    - **Evidence Level**: Cannot be assigned. The appropriateness of omitting lymph node dissection depends on final surgical staging (e.g., myometrial invasion, tumor size), which is not provided.
+
+- **Decision Point 2**: Adjuvant Therapy – 6 cycles of Carboplatin/Paclitaxel.
+    - **Guideline Alignment**: Cannot be verified.
+    - **Evidence Source**: No source provided for verification.
+    - **Evidence Level**: Cannot be assigned. The use of this regimen is common for high-risk endometrial cancer, but its specific application here depends on the final surgical stage and risk stratification.
+
+- **Decision Point 3**: Radiation – Vaginal brachytherapy ONLY.
+    - **Guideline Alignment**: Cannot be verified.
+    - **Evidence Source**: No source provided for verification.
+    - **Evidence Level**: Cannot be assigned. The choice between vaginal cuff brachytherapy and external beam pelvic radiation depends on final pathologic risk factors (stage, lymphovascular space invasion, etc.).
+
+- **Decision Point 4**: Maintenance Therapy – Lenvatinib + Pembrolizumab.
+    - **Guideline Alignment**: **Potential Major Discrepancy (Flagged based on general knowledge, not cited evidence)**. This combination is not a standard maintenance therapy for primary, newly diagnosed endometrial cancer, even with p53 abnormality. It is FDA-approved for advanced, MMR-proficient endometrial carcinoma that has progressed following prior systemic therapy.
+    - **Evidence Source**: No source provided for verification. (General knowledge points to KEYNOTE-775 trial in the *advanced, previously treated* setting).
+    - **Evidence Level**: Cannot be assigned.
+
+## Verification Gaps
+The audit lacks **all necessary evidence** to validate this plan. Critical missing information includes:
+1.  **Formal Treatment Guidelines:** Retrieved NCCN Guidelines® or ESGO/ESTRO/ESP guidelines for endometrial cancer.
+2.  **Final Surgical Pathology Stage:** The treatment plan is entirely dependent on the FIGO 2009 or 2023 surgical stage (e.g., IA, IB, II, III), which is not provided in the input.
+3.  **Risk Stratification Evidence:** Sources defining "high-intermediate risk" and "high-risk" endometrial cancer to justify adjuvant chemo vs. chemo-radiation.
+4.  **Molecular Classification-Based Therapy Evidence:** Specific guidelines or trial data supporting the use of targeted therapy (lenvatinib/pembrolizumab) in the adjuvant or maintenance setting for newly diagnosed, p53-mutant endometrial cancer.
+
+## Strategy for Next Step
+To fill the critical gaps, the following specific searches are required:
+1.  Search for: **"NCCN Guidelines Endometrial Carcinoma 2024"** or **"ESGO ESTRO ESP endometrial cancer guidelines 2021"**.
+2.  Search for: **"PORTEC-3 trial adjuvant chemoradiation endometrial cancer high risk"**.
+3.  Search for: **"GOG-258 trial stage III-IVA endometrial cancer chemoradiation"**.
+4.  Search for: **"p53 mutation endometrial cancer adjuvant therapy"** and **"lenvatinib pembrolizumab newly diagnosed endometrial cancer trial"**.
+
+## References
+*No sources were provided for citation.* [^^0] 
+Iteration : 1 
+
+ Tool and tool query in subquery : NCCN guidelines Category of Evidence for sentinel lymph node biopsy versus systematic lymphadenectomy in FIGO Grade 3 endometrioid endometrial cancer : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrial cancer'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': ''}}] 
+
+ Tool and tool query in subquery : NCCN Category of Evidence and recommendations for adjuvant chemotherapy (carboplatin/paclitaxel) plus vaginal brachytherapy for stage I, Grade 3 endometrioid adenocarcinoma : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrioid adenocarcinoma'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'stage I grade 3 endometrioid endometrial cancer adjuvant chemotherapy carboplatin paclitaxel brachytherapy', 'filter': 'overallStatus=COMPLETED'}}] 
+
+ Tool and tool query in subquery : NCCN 2025 updates on external beam radiotherapy (EBRT) versus vaginal brachytherapy only for adjuvant treatment of high-intermediate and high-risk endometrioid endometrial cancer : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant radiotherapy', 'filter': 'interventional'}}, {'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'diseaseName': 'endometrioid endometrial cancer'}}] 
+
+ Tool and tool query in subquery : NCCN guidelines indication for lenvatinib plus pembrolizumab in the adjuvant setting for p53-mutant, MMR-proficient endometrial cancer : 
+
+ [{'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib pembrolizumab adjuvant endometrial cancer', 'condition': 'Endometrial Cancer', 'intervention': 'lenvatinib AND pembrolizumab'}}] 
+
+ Tool and tool query in subquery : Keynote-775 trial eligibility and results: does it support lenvatinib/pembrolizumab for p53-abnormal, MMR-proficient tumors in the first-line maintenance setting? : 
+
+ [{'tool_name': 'get_study', 'tool_input': {'nct_id': 'NCT03517449', 'format': 'json'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}] 
+
+ Tool and tool query in subquery : ESMO 2024 clinical practice guidelines for the management of molecularly classified endometrial cancer: treatment recommendations for p53-abnormal subgroup : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'diseaseName': 'endometrial cancer'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'EFO_1001465'}}] 
+
+ Final Answer : 
+
+ ## Audit Findings (So Far)
+**Important Note:** The "Retrieved Evidence" section explicitly states *"No specific facts or information were found for the provided query."* Therefore, **no verification against evidence or assignment of evidence levels is possible at this time.** The assessment below reflects the inability to perform the audit rather than a judgment on the plan's clinical validity.
+
+- **Decision Point 1**: Adjuvant Chemotherapy with Carboplatin/Paclitaxel
+  - **Guideline Alignment**: **Cannot Verify.** No evidence was retrieved to confirm if this regimen is standard-of-care for Stage I-III high-grade endometrioid adenocarcinoma.
+  - **Evidence Source**: N/A
+  - **Evidence Level**: N/A
+
+- **Decision Point 2**: Radiation Therapy (Vaginal Brachytherapy ONLY)
+  - **Guideline Alignment**: **Cannot Verify.** No evidence was retrieved to confirm if this is the appropriate radiation modality and field for a patient with high-grade, p53-mutated disease.
+  - **Evidence Source**: N/A
+  - **Evidence Level**: N/A
+
+- **Decision Point 3**: Maintenance Therapy with Lenvatinib + Pembrolizumab
+  - **Guideline Alignment**: **Cannot Verify.** No evidence was retrieved to support the use of this combination specifically for p53-mutant endometrial cancer in the adjuvant/maintenance setting. This decision requires the highest level of scrutiny.
+  - **Evidence Source**: N/A
+  - **Evidence Level**: N/A
+
+- **Decision Point 4**: Omission of Lymph Node Dissection
+  - **Guideline Alignment**: **Cannot Verify.** No evidence was retrieved regarding the criteria (e.g., specific pre-op imaging findings, tumor size) that justify omitting surgical staging in a high-grade carcinoma.
+  - **Evidence Source**: N/A
+  - **Evidence Level**: N/A
+
+## Verification Gaps
+The audit cannot proceed due to a complete absence of retrieved clinical evidence. Specific missing data includes:
+1.  **Primary Treatment Guidelines:** The most current NCCN Guidelines or ESGO/ESTRO/ESP guidelines for the management of endometrial carcinoma (specifically for high-grade endometrioid histology).
+2.  **Risk Stratification Evidence:** Data defining "high-intermediate risk" or "high-risk" categories in endometrial cancer to contextualize the need for adjuvant chemo/radiation.
+3.  **Clinical Trial Data:** Evidence supporting specific adjuvant regimens (e.g., GOG-258 for chemoradiation vs. chemotherapy alone, GOG-249 for pelvic radiation vs. vaginal cuff brachytherapy plus chemotherapy).
+4.  **Molecularly Targeted Therapy Evidence:** Clinical trial results (e.g., KEYNOTE-775, NRG-GY018) defining the role of immunotherapy (pembrolizumab) and combination therapy (lenvatinib+pembrolizumab) in advanced, recurrent, or *adjuvant* settings, and their link to specific molecular subtypes (p53 abnormal, MMR status).
+
+## Strategy for Next Step
+To perform a valid audit, the following specific searches must be conducted:
+1.  Search for **"NCCN Guidelines Endometrial Carcinoma"** (latest version).
+2.  Search for **"ESGO ESTRO ESP guidelines endometrial cancer"**.
+3.  Search for key clinical trials: **"GOG-258 endometrial cancer"**, **"GOG-249 endometrial cancer"**, and **"PORTEC-3 endometrial cancer"**.
+4.  Search for **"KEYNOTE-775 endometrial cancer"** and **"NRG GY018 endometrial cancer"** to evaluate the evidence for pembrolizumab and lenvatinib+pembrolizumab.
+5.  Search for **"TCGA molecular classification endometrial cancer adjuvant therapy"** to understand treatment implications for the p53-mutant (copy-number high) subtype.
+
+## References
+*No sources were available for citation.* 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and recommendation for omitting lymph node dissection in patients with clinical stage I, grade 3 endometrioid carcinoma based on pre-operative imaging? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrioid carcinoma lymph node dissection clinical stage I grade 3', 'filter': 'status:recruiting|status:active_not_recruiting|status:completed'}}, {'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrioid carcinoma'}}] 
+
+ Tool and tool query in subquery : According to the latest NCCN Guidelines for Uterine Neoplasms, what is the recommended adjuvant therapy (chemotherapy, radiation, or both) for stage I, grade 3 endometrioid carcinoma with p53 abnormal (high) and MMR proficient molecular profile? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial carcinoma adjuvant therapy stage I grade 3 p53 MMR proficient', 'filter': 'phase:PHASE3,status:COMPLETED'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial carcinoma'}}] 
+
+ Tool and tool query in subquery : Does the NCCN Guidelines support the use of vaginal brachytherapy alone (without pelvic external beam radiation) for stage I, grade 3 endometrioid carcinoma with adverse molecular features (p53 abnormal)? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer brachytherapy p53', 'filter': '{"include": ["CONDITION:Endometrial Cancer", "INTERVENTION:Brachytherapy"], "status": ["RECRUITING", "COMPLETED", "ACTIVE_NOT_RECRUITING"]}'}}, {'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrioid carcinoma'}}] 
+
+ Tool and tool query in subquery : Is the combination of lenvatinib and pembrolizumab recommended as maintenance therapy for patients with p53 abnormal, MMR proficient endometrial cancer following adjuvant chemoradiation? What is the evidence category? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib pembrolizumab maintenance therapy endometrial cancer adjuvant chemoradiation p53 MMR proficient', 'filter': {'conditions': ['endometrial cancer'], 'interventions': ['lenvatinib', 'pembrolizumab'], 'study_type': 'Interventional'}}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : NCCN guidelines endometrial cancer 2025 lymph node dissection Grade 3 endometrioid surgical staging : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : NCCN Category of Evidence adjuvant carboplatin paclitaxel p53 abnormal endometrioid endometrial cancer : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'adjuvant carboplatin paclitaxel endometrial cancer p53', 'filter': {'condition': 'endometrial cancer', 'intervention': ['carboplatin', 'paclitaxel']}}}] 
+
+ Tool and tool query in subquery : NCCN recommendations vaginal brachytherapy only versus external beam radiation high risk endometrial cancer : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer vaginal brachytherapy external beam radiation high risk'}}] 
+
+ Tool and tool query in subquery : NCCN Category of Evidence maintenance lenvatinib pembrolizumab MMR proficient p53 mutant endometrial cancer KEYNOTE-775 : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'KEYNOTE-775 lenvatinib pembrolizumab endometrial cancer'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}, {'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : 2025 ESMO NCCN guideline update p53abn endometrial carcinoma treatment : 
+
+ [] 
+
+ Tool and tool query in subquery : NCCN molecular classification endometrial cancer p53 mutation treatment algorithm : 
+
+ [] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+*Note: The "Retrieved Evidence" and "Available SOURCES" sections are currently empty. Therefore, a definitive evidence-based audit cannot be performed. The following assessment flags each component of the plan as requiring verification against established guidelines.*
+
+- **Decision Point 1: Surgical Staging**
+  - **Guideline Alignment**: Cannot Verify - Missing Data
+  - **Evidence Source**: *No sources provided.*
+  - **Evidence Level**: N/A
+  - **Comment**: The plan describes a total hysterectomy with bilateral salpingo-oophorectomy without lymph node dissection. Standard guidelines for high-grade (Grade 3) endometrioid adenocarcinoma typically recommend comprehensive surgical staging, including lymph node assessment, to determine the FIGO stage and guide adjuvant therapy. The rationale for omitting lymph node dissection based solely on pre-op imaging requires verification against specific guideline criteria.
+
+- **Decision Point 2: Adjuvant Chemotherapy**
+  - **Guideline Alignment**: Cannot Verify - Missing Data
+  - **Evidence Source**: *No sources provided.*
+  - **Evidence Level**: N/A
+  - **Comment**: The use of 6 cycles of carboplatin/paclitaxel is a common adjuvant regimen. However, its recommendation depends critically on the postoperative FIGO stage and other risk factors (e.g., presence of lymphovascular space invasion, tumor size). The specific AUC and dose must be verified against standard dosing guidelines.
+
+- **Decision Point 3: Adjuvant Radiation Therapy**
+  - **Guideline Alignment**: Cannot Verify - Missing Data
+  - **Evidence Source**: *No sources provided.*
+  - **Evidence Level**: N/A
+  - **Comment**: The recommendation for "vaginal brachytherapy ONLY" is highly stage-dependent. For many high-risk early-stage cancers, guidelines may recommend external beam radiation therapy (EBRT) with or without brachytherapy. The sole use of vaginal brachytherapy must be validated against the patient's final surgical pathology and stage.
+
+- **Decision Point 4: Adjuvant Maintenance Therapy**
+  - **Guideline Alignment**: **WARNING - Potential Major Discrepancy**
+  - **Evidence Source**: *No sources provided.*
+  - **Evidence Level**: N/A
+  - **Comment**: The use of lenvatinib + pembrolizumab as *maintenance* therapy following adjuvant chemoradiation for a patient with early-stage disease is highly atypical and not a recognized standard. This combination is approved for advanced or recurrent endometrial carcinoma that is not MSI-H/dMMR. Its application in the adjuvant setting, and specifically tied to a p53 mutation, requires robust clinical trial evidence which is not standard of care. This claim contradicts common treatment paradigms.
+
+## Verification Gaps
+The following specific evidence is required to validate this treatment plan:
+1.  **The patient's postoperative FIGO stage (e.g., IA, IB, II, III)**, as this is the primary driver for all adjuvant therapy decisions.
+2.  **National Comprehensive Cancer Network (NCCN) Guidelines for Uterine Neoplasms** to verify:
+    *   Criteria for omitting lymph node dissection.
+    *   Recommended adjuvant therapy (chemotherapy, radiation, or both) based on stage, grade, and histology.
+    *   Standard dosing regimens for carboplatin/paclitaxel.
+3.  **Evidence supporting the use of lenvatinib + pembrolizumab as maintenance therapy** in the adjuvant setting for early-stage endometrial cancer, particularly linked to p53 status.
+4.  **Clinical trial data or society guidelines** (e.g., ESGO, ESMO) on the management of "p53-abnormal" endometrial carcinomas to see if this molecular finding alters standard adjuvant treatment.
+
+## Strategy for Next Step
+To fill the evidence gaps, execute the following targeted searches:
+1.  Search for the latest **NCCN Guidelines for Uterine Neoplasms**. Filter sections on "Endometrial Carcinoma" and "Principles of Surgery and Staging."
+2.  Search for high-impact clinical trials guiding adjuvant therapy, such as **PORTEC-3, GOG-258, and GOG-249**.
+3.  Search PubMed/clinical trial databases with the terms: **"lenvatinib pembrolizumab adjuvant maintenance endometrial cancer"** and **"p53 mutation adjuvant therapy endometrial carcinoma"**.
+4.  Search for **ESMO or ESGO clinical practice guidelines** for endometrial cancer to compare recommendations.
+
+## References
+*No sources have been provided for citation.* 
+Iteration : 1 
+
+ Tool and tool query in subquery : What is the NCCN recommendation and Category of Evidence for systematic lymphadenectomy or sentinel lymph node mapping in patients with preoperative Grade 3 endometrioid endometrial carcinoma? : 
+
+ [] 
+
+ Tool and tool query in subquery : According to the most recent NCCN Guidelines, what is the Category 1 recommended adjuvant therapy (chemotherapy and/or radiation) for Stage I, Grade 3 endometrioid endometrial carcinoma with p53 abnormal molecular profile? : 
+
+ [] 
+
+ Tool and tool query in subquery : Is vaginal brachytherapy alone (without external beam radiation therapy) a Category 1 recommendation for adjuvant treatment of Stage I, Grade 3 endometrioid cancer with p53 abnormality? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'vaginal brachytherapy endometrial cancer', 'filter': 'primary|condition|Endometrial Cancer', 'post_filter': 'interventions|Brachytherapy'}}] 
+
+ Tool and tool query in subquery : Does the NCCN Guidelines list a p53 mutation as a biomarker for initiating maintenance therapy with lenvatinib plus pembrolizumab in advanced or recurrent endometrial cancer? What is the required prior therapy and biomarker status (e.g., MMR status)? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib pembrolizumab endometrial cancer maintenance', 'filter': 'overallStatus=Active,Not yet recruiting,Recruiting,Enrolling by invitation'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}] 
+
+ Tool and tool query in subquery : Are there any 2024 or 2025 NCCN updates that modify the first-line adjuvant treatment algorithm for MMR-proficient, p53-abnormal endometrial carcinomas? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial carcinoma'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant therapy', 'filter': 'advancedSearch:"endometrial carcinoma" AND "adjuvant" AND "first line" AND ("2024" OR "2025")'}}] 
+
+ Tool and tool query in subquery : What was the patient population and biomarker criteria in the Keynote-775 trial that supported the approval of lenvatinib + pembrolizumab, and does a p53-mutant, MMR-proficient tumor fit that criteria? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'KEYNOTE-775', 'filter': 'overallStatus=COMPLETED'}}] 
+
+ Final Answer : 
+
+ ## Audit Findings (So Far)
+
+**Note:** No guidelines or evidence sources have been provided for this audit. Therefore, every element of the treatment plan is **unverified** and cannot be assessed for alignment, consistency, or evidence level. The following findings are based solely on the absence of evidence for comparison.
+
+- **Decision Point 1: Surgery (Total hysterectomy with BSO, no lymph node dissection)**
+  - **Guideline Alignment**: Cannot verify.
+  - **Evidence Source**: No sources provided.
+  - **Evidence Level**: Not applicable.
+
+- **Decision Point 2: Adjuvant Therapy (Carboplatin + Paclitaxel for 6 cycles)**
+  - **Guideline Alignment**: Cannot verify.
+  - **Evidence Source**: No sources provided.
+  - **Evidence Level**: Not applicable.
+
+- **Decision Point 3: Radiation (Vaginal brachytherapy only)**
+  - **Guideline Alignment**: Cannot verify.
+  - **Evidence Source**: No sources provided.
+  - **Evidence Level**: Not applicable.
+
+- **Decision Point 4: Maintenance Therapy (Lenvatinib + Pembrolizumab)**
+  - **Guideline Alignment**: Cannot verify.
+  - **Evidence Source**: No sources provided.
+  - **Evidence Level**: Not applicable.
+
+## Verification Gaps
+The audit cannot proceed due to a complete lack of retrieved evidence. Specific missing data required to validate this plan includes:
+1.  Guidelines for the surgical staging and lymph node management of high-grade endometrial cancer.
+2.  Evidence supporting adjuvant chemotherapy regimens (e.g., carboplatin/paclitaxel) for patients with high-grade endometrioid histology and specific molecular profiles (p53 abnormal, MMR proficient).
+3.  Guidelines on the use and sequencing of adjuvant radiotherapy (particularly vaginal brachytherapy alone) following surgery and chemotherapy.
+4.  Evidence supporting the use of lenvatinib plus pembrolizumab as **maintenance therapy** (as opposed to treatment for recurrent/advanced disease) in the primary adjuvant setting for endometrial cancer, especially based solely on a p53 mutation.
+
+## Strategy for Next Step
+To fill the critical evidence gaps, the following specific guideline documents and trial data must be retrieved and analyzed:
+1.  **Search for authoritative guidelines**: Retrieve the latest versions of the **NCCN Clinical Practice Guidelines in Oncology (NCCN Guidelines®) for Uterine Neoplasms** and the **European Society of Gynaecological Oncology (ESGO) guidelines** for endometrial cancer.
+2.  **Search for key adjuvant therapy trials**: Locate data from pivotal trials such as **PORTEC-3** and **GOG-249** to verify the role of chemotherapy and chemoradiation in high-risk early-stage disease.
+3.  **Search for evidence on targeted maintenance therapy**: Specifically, retrieve the **KEYNOTE-775/Study 309** trial publication to confirm the approved indication for lenvatinib plus pembrolizumab (advanced, pre-treated disease, not adjuvant maintenance) and review any literature on molecularly targeted adjuvant trials.
+
+## References
+*No sources have been provided for citation.* 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : NCCN Guidelines Category of Evidence for omitting lymph node dissection in clinically early-stage, Grade 3 endometrioid endometrial cancer : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrioid endometrial cancer lymph node dissection', 'filter': 'condition:endometrial cancer'}}] 
+
+ Tool and tool query in subquery : NCCN Category 1 recommendation for adjuvant carboplatin and paclitaxel chemotherapy in stage I-II endometrioid endometrial cancer with high-grade features : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer carboplatin paclitaxel adjuvant', 'filter': {'intervention': ['Drug: carboplatin', 'Drug: paclitaxel'], 'phase': ['Phase 3']}, 'post_filter': {'fields': ['brief_title', 'official_title', 'study_type', 'phase', 'conditions', 'interventions', 'detailed_description']}}}] 
+
+ Tool and tool query in subquery : ESMO or ASTRO guidelines 2024 for adjuvant radiation therapy in stage I, Grade 3 endometrioid endometrial cancer: vaginal brachytherapy alone vs. external beam radiation : 
+
+ [] 
+
+ Tool and tool query in subquery : NCCN or FDA approval status of lenvatinib plus pembrolizumab as adjuvant maintenance therapy for p53 abnormal endometrial cancer : 
+
+ [{'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'Lenvima', 'limit': 10}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'Keytruda', 'limit': 10}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib pembrolizumab endometrial cancer', 'filter': 'advanced|status=COMPLETED|status=ACTIVE_NOT_RECRUITING|status=RECRUITING', 'post_filter': {'fields': 'NCTId,BriefTitle,OverallStatus,Phase,Condition,InterventionName,PrimaryOutcomeMeasure'}}}] 
+
+ Tool and tool query in subquery : ESMO ESGO ESTRO 2023 molecular classification: treatment implications for POLE wild-type, p53 abnormal, MMR proficient endometrial cancer : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer POLE p53 MMR proficient', 'filter': 'interventional'}}] 
+
+ Tool and tool query in subquery : KEYNOTE-775 trial eligibility criteria: did the study include patients with p53 mutant tumors in the adjuvant setting? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'KEYNOTE-775', 'limit': 1}}, {'tool_name': 'get_study', 'tool_input': {'nct_id': 'NCT03517449'}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+
+- **Decision Point 1**: Total hysterectomy with bilateral salpingo-oophorectomy without lymph node dissection.
+  - **Guideline Alignment**: Unknown
+  - **Evidence Source**: No evidence retrieved to verify the surgical approach or the decision to forgo lymph node dissection.
+  - **Evidence Level**: Cannot be assessed.
+
+- **Decision Point 2**: Adjuvant chemotherapy with Carboplatin (AUC 5) + Paclitaxel (175 mg/m²) for 6 cycles.
+  - **Guideline Alignment**: Unknown
+  - **Evidence Source**: No evidence retrieved to verify this as the standard adjuvant regimen for this specific tumor type (Grade 3 endometrioid, MMRp, p53abn).
+  - **Evidence Level**: Cannot be assessed.
+
+- **Decision Point 3**: Adjuvant radiation with vaginal brachytherapy ONLY (no external beam radiation therapy).
+  - **Guideline Alignment**: Unknown
+  - **Evidence Source**: No evidence retrieved to verify the appropriateness of brachytherapy monotherapy for this patient's risk profile post-surgery.
+  - **Evidence Level**: Cannot be assessed.
+
+- **Decision Point 4**: Maintenance therapy with Lenvatinib + Pembrolizumab due to p53 mutation.
+  - **Guideline Alignment**: Unknown
+  - **Evidence Source**: No evidence retrieved to verify the use of this combination as maintenance therapy specifically for p53-abnormal (p53abn) endometrial carcinoma in the adjuvant setting. Current approvals/guidelines are typically for advanced/recurrent MMRp disease.
+  - **Evidence Level**: Cannot be assessed.
+
+## Verification Gaps
+The audit cannot proceed without retrieved clinical guidelines and trial data. Specific missing evidence includes:
+1.  **Surgical Staging**: Guidelines on the necessity and extent of lymph node dissection (sentinel vs. systematic) for Grade 3 endometrioid carcinoma.
+2.  **Adjuvant Therapy Selection**: Evidence for adjuvant chemotherapy (type, regimen, number of cycles) and/or radiation therapy (modality, field) based on the integrated molecular classification (specifically for the "p53abn" subgroup of endometrioid histology).
+3.  **Molecularly-Targeted Therapy**: Evidence supporting the efficacy of lenvatinib + pembrolizumab as adjuvant maintenance therapy for patients with p53-mutant, MMR-proficient endometrial cancer. Data is needed to confirm if this is a standard recommendation or an investigational approach.
+
+## Strategy for Next Step
+To validate this treatment plan, the following specific evidence must be retrieved:
+1.  Search the latest **NCCN Guidelines for Uterine Neoplasms** for recommendations on surgical management and adjuvant therapy (chemotherapy and/or radiation) for Stage I-III endometrioid carcinoma, with a focus on high-grade (Grade 3) tumors and the p53abn molecular subtype.
+2.  Search for key clinical trial publications that define standard adjuvant care for high-risk endometrial cancer (e.g., **GOG-249**, **PORTEC-3**) and examine their subgroup analyses or applicability to molecularly classified cohorts.
+3.  Search for publications from trials investigating **lenvatinib + pembrolizumab** (e.g., KEYNOTE-775, KEYNOTE-146) to determine their approved/studied indication (e.g., advanced, recurrent, MMRp) and any data on use in the adjuvant or maintenance setting.
+
+## References
+[No sources have been retrieved or cited yet.] 
+Iteration : 1 
+
+ Tool and tool query in subquery : NCCN Guidelines endometrial cancer 2025 lymph node dissection Grade 3 endometrioid imaging negative : 
+
+ [] 
+
+ Tool and tool query in subquery : NCCN Category of Evidence adjuvant carboplatin paclitaxel stage I p53 abnormal endometrial carcinoma : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial carcinoma'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'adjuvant carboplatin paclitaxel stage I endometrial carcinoma p53 mutation'}}] 
+
+ Tool and tool query in subquery : NCCN recommendation radiation therapy vaginal brachytherapy only versus pelvic radiation for p53 mutant endometrial cancer : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer p53 mutation', 'filter': {'conditions': ['Endometrial Cancer', 'Endometrial Carcinoma'], 'interventions': ['Radiation', 'Brachytherapy', 'Radiotherapy'], 'status': ['RECRUITING', 'ACTIVE_NOT_RECRUITING', 'COMPLETED']}, 'post_filter': {'search_fields': ['brief_title', 'official_title', 'description', 'intervention_name'], 'keywords': ['vaginal brachytherapy', 'pelvic radiation', 'pelvic radiotherapy', 'p53', 'mutant', 'NCCN']}}}] 
+
+ Tool and tool query in subquery : NCCN Category of Evidence lenvatinib plus pembrolizumab maintenance therapy for newly diagnosed p53abn endometrial cancer after chemoradiation : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib AND pembrolizumab AND endometrial cancer', 'filter': 'condition=Endometrial Neoplasms&intervention=lenvatinib,pembrolizumab', 'post_filter': ''}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib', 'limit': 5, 'skip': 0}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab', 'limit': 5, 'skip': 0}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : ESMO ESGO ESTRO 2023 molecular classification POLE wild-type p53 abnormal MMR proficient adjuvant therapy : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant therapy', 'filter': 'phase:phase-2 OR phase:phase-3', 'post_filter': 'type:interventional'}}] 
+
+ Tool and tool query in subquery : NCCN Guidelines Version 1.2025 update p53 abnormal endometrial cancer treatment changes : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}, {'tool_name': 'clinvar_query_variant_significance', 'tool_input': {'refseqid': 'NP_000537', 'variant': 'p.?'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'p53 endometrial cancer', 'filter': '{"status":["RECRUITING","ACTIVE_NOT_RECRUITING"]}'}}] 
+
+ Final Answer : 
+
+ ## Audit Findings (So Far)
+
+**Note on Available Evidence:** No clinical guidelines, trial data, or other sources were provided for this audit ([^^0]). Therefore, the evidence level for all decisions is **"Unverifiable - No Source Data."** The following analysis is based on general clinical principles and highlights areas where guideline consultation is **essential** before proceeding.
+
+- **Decision Point 1**: Surgery - Total hysterectomy/bilateral salpingo-oophorectomy (TH/BSO) without lymph node dissection.
+  - **Guideline Alignment**: **Partial (Cannot Verify)**. TH/BSO is the cornerstone surgical treatment. However, the omission of lymph node assessment (dissection or sentinel lymph node mapping) for a Grade 3 endometrioid carcinoma is a significant deviation from standard staging practice, regardless of pre-op imaging. Imaging cannot reliably exclude micrometastases.
+  - **Evidence Source**: *No source provided for verification* [^^0].
+  - **Evidence Level**: Unverifiable - No Source Data.
+
+- **Decision Point 2**: Adjuvant Therapy - Platinum/Taxane chemotherapy for 6 cycles.
+  - **Guideline Alignment**: **Consistent (Cannot Verify)**. For a high-grade (Grade 3) endometrioid carcinoma with high-risk features, adjuvant carboplatin/paclitaxel is a standard systemic treatment option. The specified regimen (AUC 5, 175 mg/m²) aligns with common practice.
+  - **Evidence Source**: *No source provided for verification* [^^0].
+  - **Evidence Level**: Unverifiable - No Source Data.
+
+- **Decision Point 3**: Adjuvant Radiation - Vaginal brachytherapy ONLY.
+  - **Guideline Alignment**: **Inconsistent (Cannot Verify)**. For a Grade 3 cancer with no surgical nodal staging, the use of vaginal cuff brachytherapy alone (without external beam pelvic radiation therapy) would be considered insufficient for many patients with high-intermediate or high-risk features. The lack of nodal staging data makes this decision highly uncertain.
+  - **Evidence Source**: *No source provided for verification* [^^0].
+  - **Evidence Level**: Unverifiable - No Source Data.
+
+- **Decision Point 4**: Maintenance Therapy - Lenvatinib + Pembrolizumab due to p53 abnormality.
+  - **Guideline Alignment**: **Inconsistent (Cannot Verify)**. The combination of lenvatinib + pembrolizumab is FDA-approved and guideline-recommended specifically for advanced **mismatch repair proficient (pMMR)** endometrial carcinoma, **not** based on p53 status. While p53 abnormality (p53abn) is a distinct molecular subtype associated with poor prognosis, it is not an established predictive biomarker for this immunotherapy combination. Using this regimen as *maintenance* after adjuvant chemo-radiation is a highly unconventional and non-evidence-based approach for this stage of disease.
+  - **Evidence Source**: *No source provided for verification* [^^0].
+  - **Evidence Level**: Unverifiable - No Source Data.
+
+## Verification Gaps
+
+The entire treatment plan is currently unverified due to a complete lack of source materials. Specific critical gaps include:
+1.  **Surgical Staging Guidelines:** Evidence for the appropriateness of omitting lymph node evaluation in a patient with Grade 3 endometrioid endometrial cancer.
+2.  **Adjuvant Therapy Indications:** Risk stratification models (e.g., ESMO/ESGO/ESTRO) or guidelines (e.g., NCCN) to determine the need for and components of adjuvant therapy (chemotherapy, radiation, or both) for this patient's profile.
+3.  **Radiation Therapy Field:** Evidence supporting vaginal brachytherapy alone versus brachytherapy plus external beam pelvic radiation for high-grade disease without nodal surgical staging.
+4.  **Molecularly-Targeted Therapy:** Clinical trial evidence or guideline recommendations supporting the use of lenvatinib + pembrolizumab as maintenance therapy in the adjuvant setting for endometrial cancer, and specifically for tumors with p53 mutations (not based on MMR status).
+
+## Strategy for Next Step
+
+To perform a valid evidence-based audit, the following specific searches for primary guideline sources are required:
+1.  Search for the latest **National Comprehensive Cancer Network (NCCN) Guidelines for Uterine Neoplasms**.
+2.  Search for the **European Society for Medical Oncology (ESMO) / European Society of Gynaecological Oncology (ESGO) / European SocieTy for Radiotherapy & Oncology (ESTRO) consensus guidelines** on endometrial carcinoma.
+3.  Search for key clinical trial publications:
+    *   `GOG-258` (chemoradiation vs. chemotherapy alone for stage III-IVA disease).
+    *   `PORTEC-3` (chemoradiation vs. radiation alone for high-risk disease).
+    *   `KEYNOTE-775 / Study 309` (pivotal trial for lenvatinib + pembrolizumab in advanced endometrial cancer).
+4.  Search for consensus statements on the **Molecular Classification of Endometrial Carcinoma (ProMisE classifier)** and its implications for adjuvant treatment decisions.
+
+## References
+[^^0]: No clinical guidelines or source materials were provided for this evidence audit.
+
+ 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : For FIGO Grade 3 endometrioid endometrial cancer, what is the NCCN Category of Evidence and recommendation for performing surgical lymph node assessment versus omitting it based on pre-operative imaging? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'FIGO Grade 3 endometrioid endometrial cancer'}}] 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence for adjuvant carboplatin and paclitaxel chemotherapy for 6 cycles in patients with stage I, Grade 3 endometrioid endometrial cancer post-hysterectomy? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': {'condition': 'endometrioid endometrial cancer', 'intervention': ['carboplatin', 'paclitaxel'], 'other_terms': 'adjuvant NCCN'}, 'filter': {'study_type': 'expanded_access'}, 'post_filter': {'fields': ['study_design_info', 'eligibility', 'sponsor_collaborators']}}}] 
+
+ Tool and tool query in subquery : According to the 2024/2025 NCCN Guidelines, what is the recommended adjuvant radiation therapy (EBRT vs. brachytherapy) for stage I, Grade 3 endometrioid endometrial cancer with high-risk features? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant radiation therapy', 'filter': '{"briefTitle.terms": ["stage I", "grade 3", "high-risk", "endometrioid"], "interventionNames.terms": ["brachytherapy", "external beam radiation therapy"]}'}}] 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and specific molecular indication (MMR/MSI status) for the use of lenvatinib plus pembrolizumab as maintenance therapy in advanced or recurrent endometrial cancer? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib pembrolizumab endometrial cancer maintenance', 'filter': 'advanced OR recurrent'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}] 
+
+ Tool and tool query in subquery : Does the molecular profile 'p53 abnormal (high), MMR proficient, POLE wild-type' classify this endometrioid carcinoma into a specific molecular subgroup per ESMO/FIGO, and what are the associated treatment implications? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrioid carcinoma'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'POLE'}}] 
+
+ Tool and tool query in subquery : Are there any recent updates (2024-2025) in the NCCN or ESMO guidelines regarding the use of immune checkpoint inhibitors (like pembrolizumab) in MMR proficient (pMMR) endometrial cancer? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer pembrolizumab MMR proficient', 'post_filter': '{"start_date": "2024-01-01"}'}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+
+**Note:** No evidence sources have been retrieved or provided for this audit. Therefore, no claims in the treatment plan can be verified for alignment with guidelines, and no evidence levels can be assigned. The following assessment is based on a framework of common clinical trial and guideline knowledge but remains **unverified**.
+
+- **Decision Point 1: Surgery - Total hysterectomy with bilateral salpingo-oophorectomy (TH-BSO) without lymph node dissection.**
+  - **Guideline Alignment:** Unverifiable.
+  - **Evidence Source:** No sources retrieved.
+  - **Evidence Level:** Cannot be assigned.
+  - **Comment:** Surgical staging with lymph node assessment is a cornerstone of initial management for high-grade endometrial cancer. The omission of lymphadenectomy, based solely on pre-op imaging, is a significant decision that requires validation against current surgical guidelines (e.g., NCCN, ESGO).
+
+- **Decision Point 2: Adjuvant Therapy - Platinum/Taxane Chemotherapy.**
+  - **Guideline Alignment:** Unverifiable.
+  - **Evidence Source:** No sources retrieved.
+  - **Evidence Level:** Cannot be assigned.
+  - **Comment:** For FIGO Grade 3 endometrioid carcinoma, adjuvant carboplatin/paclitaxel is a common standard. However, the specific indication (e.g., based on stage, lymphovascular space invasion) and number of cycles (6) must be checked against stage-specific recommendations from major trials (e.g., GOG-258, PORTEC-3) and guidelines.
+
+- **Decision Point 3: Adjuvant Radiation - Vaginal brachytherapy ONLY.**
+  - **Guideline Alignment:** Unverifiable.
+  - **Evidence Source:** No sources retrieved.
+  - **Evidence Level:** Cannot be assigned.
+  - **Comment:** The use of vaginal brachytherapy alone (vs. external beam pelvic radiotherapy) is highly dependent on final surgical pathology stage, risk factors, and the results of sentinel/node dissection. This specific recommendation requires verification against risk stratification models.
+
+- **Decision Point 4: Maintenance Therapy - Lenvatinib + Pembrolizumab.**
+  - **Guideline Alignment:** Unverifiable.
+  - **Evidence Source:** No sources retrieved.
+  - **Evidence Level:** Cannot be assigned.
+  - **Comment:** This is the most significant claim requiring evidence. The combination of lenvatinib + pembrolizumab is FDA-approved for advanced endometrial carcinoma that is not MSI-H/dMMR, following prior systemic therapy. Its use as *adjuvant maintenance* therapy in a presumably early-stage setting (post-chemotherapy/radiation) for a patient with "p53 abnormal" status is highly unusual and not a standard-of-care. This requires direct, high-level evidence from phase III trials in the adjuvant setting.
+
+## Verification Gaps
+
+To fully validate this plan, the following specific evidence is critically missing:
+
+1.  **Surgical Staging Guidelines:** Evidence supporting the omission of surgical lymph node assessment (sentinel or dissection) in a patient with Grade 3 endometrioid carcinoma.
+2.  **Adjuvant Therapy Indications:** Stage-specific guidelines (NCCN, ESMO) defining which patients with Grade 3 disease require adjuvant chemotherapy and/or radiation.
+3.  **Radiation Modality Selection:** Evidence comparing vaginal cuff brachytherapy alone versus external beam radiotherapy for high-intermediate and high-risk early-stage disease.
+4.  **Molecularly-Tailored Therapy Evidence:**
+    *   Evidence supporting the use of "p53 abnormal" status (a common feature in serous carcinomas and many high-grade endometrioid cancers) as a predictive biomarker for lenvatinib/pembrolizumab.
+    *   **Most critically:** Evidence from randomized controlled trials supporting the use of lenvatinib + pembrolizumab as **adjuvant maintenance therapy** in any stage of endometrial cancer.
+
+## Strategy for Next Step
+
+1.  **Retrieve Authoritative Guidelines:** First, search for and retrieve the current **NCCN Guidelines for Uterine Neoplasms** and **ESMO Clinical Practice Guidelines for Endometrial Cancer**. These will provide the foundational framework for standard surgical and adjuvant therapy.
+2.  **Search for Landmark Trial Data:** Search for publications of key trials:
+    *   **GOG-249:** Compared vaginal brachytherapy + chemotherapy vs. pelvic radiation.
+    *   **PORTEC-3:** Evaluated chemoradiation vs. radiation alone in high-risk disease.
+    *   **GOG-258:** Compared chemoradiation vs. chemotherapy alone in stage III-IVA disease.
+3.  **Targeted Search for Maintenance Therapy Claim:** Conduct a specific search for:
+    *   "lenvatinib pembrolizumab adjuvant endometrial cancer"
+    *   "maintenance therapy after chemoradiation for endometrial cancer"
+    *   "p53 mutation predictive biomarker lenvatinib"
+    *   Review the **KEYNOTE-775** trial publication to confirm its population (advanced, pre-treated disease) and not adjuvant.
+4.  **Consult Molecular Guideline Sources:** Search for resources like the **NCCN Biomarkers Compendium** or **ESMO Translational Research guidelines** to verify the clinical utility of p53 status in treatment selection for endometrial cancer.
+
+## References
+*No sources have been retrieved or cited for this initial audit.* 
+Iteration : 1 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : NCCN Guidelines Endometrial Cancer 2025 lymphadenectomy recommendation for Grade 3 endometrioid adenocarcinoma preoperative imaging : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': '', 'publication_year': 2025}}] 
+
+ Tool and tool query in subquery : Category of Evidence NCCN carboplatin paclitaxel adjuvant therapy 6 cycles high-intermediate risk endometrial cancer : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant carboplatin paclitaxel', 'filter': '{"advanced": {"status": "COMPLETED"}}', 'postFilter': '{"fields": ["briefTitle", "officialTitle", "phase", "studyType", "primaryCompletionDate", "resultsFirstPostDate", "conditions", "interventions"]}'}}, {'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : NCCN Guidelines radiation therapy vaginal brachytherapy only versus external beam for Stage I endometrioid carcinoma Grade 3 p53 abnormal : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid carcinoma'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer', 'filter': '{"intervention":["brachytherapy","external beam radiation"],"phase":["PHASE3","PHASE4"],"status":"COMPLETED"}', 'post_filter': '{"fields":["NCTId","BriefTitle","Condition","InterventionName","Phase","OverallStatus"]}'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'TO_BE_FILLED_BY_DISEASE_TOOL_OUTPUT', 'additional_filters': '{"query":"(brachytherapy OR external beam) AND (stage I) AND (grade 3 OR high grade) AND (p53 OR TP53)"}'}}] 
+
+ Tool and tool query in subquery : Keynote-775 trial lenvatinib pembrolizumab inclusion criteria MMR proficient p53 mutant endometrial cancer : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'KEYNOTE-775 lenvatinib pembrolizumab endometrial cancer', 'filter': None, 'post_filter': None, 'limit': 5}}] 
+
+ Tool and tool query in subquery : ESMO Clinical Practice Guidelines 2024 molecular classification p53abn endometrioid adenocarcinoma adjuvant therapy recommendations : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrioid adenocarcinoma'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}] 
+
+ Tool and tool query in subquery : safety efficacy sequential chemotherapy radiation followed by lenvatinib pembrolizumab maintenance in endometrial cancer : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer lenvatinib pembrolizumab', 'filter': '{"status": ["RECRUITING", "ACTIVE_NOT_RECRUITING", "COMPLETED"]}'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+
+*   **Note:** No evidence sources have been retrieved yet. The following is a framework for the audit based on the treatment plan's components. All judgments are pending the retrieval of guideline evidence.
+
+-   **Decision Point 1**: Surgery - Total hysterectomy with bilateral salpingo-oophorectomy (TH/BSO) without lymph node dissection.
+    -   **Guideline Alignment**: Cannot be verified.
+    -   **Evidence Source**: *Awaiting source retrieval (e.g., NCCN or ESGO guidelines).*
+    -   **Evidence Level**: *Awaiting source retrieval.*
+
+-   **Decision Point 2**: Adjuvant Therapy - 6 cycles of Carboplatin/Paclitaxel chemotherapy.
+    -   **Guideline Alignment**: Cannot be verified.
+    -   **Evidence Source**: *Awaiting source retrieval (e.g., GOG-258, PORTEC-3, or NCCN guidelines for Stage I-III disease).*
+    -   **Evidence Level**: *Awaiting source retrieval.*
+
+-   **Decision Point 3**: Radiation - Vaginal brachytherapy only (no external beam radiotherapy).
+    -   **Guideline Alignment**: Cannot be verified.
+    -   **Evidence Source**: *Awaiting source retrieval (e.g., PORTEC-2, GOG-249, or NCCN guidelines).*
+    -   **Evidence Level**: *Awaiting source retrieval.*
+
+-   **Decision Point 4**: Maintenance Therapy - Lenvatinib + Pembrolizumab based on p53 abnormality.
+    -   **Guideline Alignment**: Cannot be verified. **PRELIMINARY FLAG**: This is a highly specific and atypical recommendation for primary adjuvant treatment in endometrial cancer.
+    -   **Evidence Source**: *Awaiting source retrieval (e.g., NCCN guidelines, KEYNOTE-775 trial data in advanced/recurrent setting).*
+    -   **Evidence Level**: *Awaiting source retrieval.*
+
+## Verification Gaps
+
+Critical evidence is missing to validate this plan. Specific gaps include:
+1.  **Surgical Staging:** Guidelines for lymph node assessment in high-grade endometrioid carcinoma (FIGO Grade 3).
+2.  **Adjuvant Therapy Indication:** Guidelines specifying which patients (by stage, grade, and molecular profile) should receive adjuvant carboplatin/paclitaxel.
+3.  **Radiation Modality:** Guidelines for selecting vaginal cuff brachytherapy alone vs. combined external beam radiotherapy for high-grade disease.
+4.  **Molecular-Based Therapy:** Definitive evidence supporting the use of lenvatinib/pembrolizumab as *primary adjuvant maintenance therapy* for endometrial cancer with abnormal p53 expression. Current evidence is primarily in the advanced/recurrent setting.
+
+## Strategy for Next Step
+
+To fill the verification gaps, the following specific searches should be conducted:
+1.  Search for the latest **NCCN Clinical Practice Guidelines in Oncology (NCCN Guidelines®) for Uterine Neoplasms**.
+2.  Search for **ESGO/ESTRO/ESP guidelines** for the management of endometrial cancer.
+3.  Search for key clinical trial publications: **GOG-258**, **PORTEC-3**, and **GOG-249** to inform adjuvant chemo/radiation decisions.
+4.  Search for the **KEYNOTE-775** trial publication and subsequent regulatory/guideline inclusions to assess the context for lenvatinib/pembrolizumab use.
+5.  Search for reviews or guidelines on the **integration of molecular classification (ProMisE/TCGA)** into adjuvant treatment decisions for endometrial cancer.
+
+## References
+*No sources have been retrieved or cited yet. Citations will follow the [^^n] format once evidence is provided.* 
+Iteration : 1 
+
+ Tool and tool query in subquery : NCCN guidelines lymph node dissection omission pre-operative imaging endometrial cancer grade 3 endometrioid adenocarcinoma : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer lymph node dissection', 'filter': '{"conditions": ["Endometrial Cancer", "Endometrioid Adenocarcinoma"], "interventions": ["Lymph Node Dissection", "Sentinel Lymph Node Biopsy"]}'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : NCCN Category of Evidence adjuvant carboplatin paclitaxel 6 cycles high-risk endometrial cancer grade 3 : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant carboplatin paclitaxel', 'filter': 'OVERALL_STATUS:COMPLETED, PHASE:PHASE3, PHASE:PHASE2'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : NCCN recommendation vaginal brachytherapy only versus external beam radiation therapy endometrial cancer FIGO grade 3 : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer brachytherapy external beam radiation', 'filter': '{"conditions": ["Endometrial Cancer"], "interventions": ["Brachytherapy", "Radiation"]}'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'EFO_ID_PLACEHOLDER'}}] 
+
+ Tool and tool query in subquery : NCCN guidelines maintenance therapy lenvatinib plus pembrolizumab after adjuvant chemotherapy endometrial cancer : 
+
+ [{'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : NCCN molecular classification endometrial cancer POLE p53 MMR adjuvant treatment recommendations 2025 : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer molecular classification adjuvant therapy POLE p53 MMR'}}] 
+
+ Tool and tool query in subquery : 2024 2025 NCCN update immunotherapy lenvatinib pembrolizumab p53 mutant endometrial cancer : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib pembrolizumab endometrial cancer', 'filter': {'condition': 'endometrial cancer', 'intervention': ['lenvatinib', 'pembrolizumab']}}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}] 
+
+ Final Answer : 
+
+ ## Audit Findings (So Far)
+
+**Note:** No retrieved evidence sources have been provided. The following analysis identifies the key clinical decisions requiring verification but cannot assign alignment, specific sources, or evidence levels.
+
+- **Decision Point 1**: Surgical approach — Total hysterectomy with bilateral salpingo-oophorectomy (TH-BSO) without lymph node dissection.
+  - **Guideline Alignment**: **Unable to Verify**
+  - **Evidence Source**: **No source retrieved.** Requires evidence (e.g., NCCN or ESGO guidelines) on surgical staging criteria, specifically the indications for omitting lymphadenectomy based on pre-operative imaging and tumor grade.
+  - **Evidence Level**: **Not Applicable**
+
+- **Decision Point 2**: Adjuvant Therapy — Six cycles of Carboplatin (AUC 5) + Paclitaxel (175 mg/m²).
+  - **Guideline Alignment**: **Unable to Verify**
+  - **Evidence Source**: **No source retrieved.** Requires evidence (e.g., GOG-258, PORTEC-3 trial data, NCCN guidelines) for the use of this specific carboplatin/paclitaxel regimen in the adjuvant setting for a patient with this profile (Grade 3, p53 abnormal, MMR proficient).
+  - **Evidence Level**: **Not Applicable**
+
+- **Decision Point 3**: Adjuvant Radiation — Vaginal brachytherapy (VBT) only.
+  - **Guideline Alignment**: **Unable to Verify**
+  - **Evidence Source**: **No source retrieved.** Requires evidence (e.g., PORTEC-2, NCCN guidelines) supporting the use of VBT alone versus external beam radiation therapy (EBRT) for a patient with high-grade (Grade 3) disease with the given molecular profile.
+  - **Evidence Level**: **Not Applicable**
+
+- **Decision Point 4**: Maintenance Therapy — Use of Lenvatinib + Pembrolizumab.
+  - **Guideline Alignment**: **Unable to Verify**
+  - **Evidence Source**: **No source retrieved.** This is a **CRITICAL GAP**. Requires evidence (e.g., KEYNOTE-775/Study 309 trial data, FDA label, NCCN recommendations) supporting the use of this combination as *maintenance* therapy in the adjuvant setting for primary endometrial cancer. Its approved use is for advanced/recurrent disease, making its application here highly atypical and in need of the strongest evidence.
+  - **Evidence Level**: **Not Applicable**
+
+## Verification Gaps
+The following specific evidence is missing to validate this plan:
+1.  **Guideline Consensus:** The most recent NCCN Clinical Practice Guidelines in Oncology (NCCN Guidelines®) for Uterine Neoplasms.
+2.  **Trial Data for Chemotherapy:** Results from key trials like GOG-258 and PORTEC-3 to define the standard adjuvant chemoradiation regimen for high-risk endometrial cancer.
+3.  **Trial Data for Radiation:** Results from PORTEC-2 or similar trials defining the role of VBT alone versus EBRT.
+4.  **Evidence for Maintenance Therapy:** Any clinical trial evidence or guideline recommendation supporting the use of Lenvatinib + Pembrolizumab as adjuvant maintenance therapy for primary, non-advanced endometrial cancer. This is the most significant evidence gap.
+5.  **Surgical Staging Criteria:** Guidelines detailing when lymph node dissection can be safely omitted.
+
+## Strategy for Next Step
+To fill the evidence gaps, execute the following specific searches:
+1.  Search for: **"NCCN Guidelines Uterine Neoplasms 2024"** (or current year).
+2.  Search for: **"GOG-258 adjuvant chemoradiation endometrial cancer results"**.
+3.  Search for: **"PORTEC-3 trial final results high-risk endometrial cancer"**.
+4.  Search for: **"PORTEC-2 vaginal brachytherapy vs EBRT"**.
+5.  Search for: **"KEYNOTE-775 lenvatinib pembrolizumab endometrial cancer adjuvant maintenance"** and **"lenvatinib pembrolizumab FDA label endometrial cancer"**.
+6.  Search for: **"ESGO/ESTRO/ESP endometrial cancer surgery guidelines lymph node dissection"**.
+
+## References
+*No sources have been retrieved or cited in this audit.* 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : NCCN Guidelines Endometrial Cancer 2025: What is the recommended surgical staging and Category of Evidence for lymph node assessment in clinically Stage I, Grade 3 endometrioid adenocarcinoma? : 
+
+ [] 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence for adjuvant carboplatin/paclitaxel chemotherapy (without external beam radiation) vs. chemotherapy with radiation for Stage I, Grade 3 endometrioid endometrial cancer with p53 abnormal molecular profile? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant chemotherapy radiation p53', 'filter': '{"condition": ["Endometrial Cancer"], "intervention": ["Carboplatin", "Paclitaxel", "Radiation"]}'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}] 
+
+ Tool and tool query in subquery : According to 2024 ESMO or NCCN updates, what is the recommended adjuvant radiation modality (vaginal brachytherapy alone vs. external beam) for Stage I endometrioid cancer with high-intermediate risk or p53abn molecular subtype? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrioid endometrial cancer adjuvant radiation', 'filter': '{"completion_date": "2023-01-01/2024-12-31", "condition": "Endometrial Cancer"}'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer p53abn adjuvant radiation', 'filter': '{"completion_date": "2023-01-01/2024-12-31"}'}}] 
+
+ Tool and tool query in subquery : Does the Keynote-775 trial or NCCN guidelines support the use of Lenvatinib + Pembrolizumab as maintenance therapy for MMR-proficient, p53 abnormal endometrial cancer following adjuvant chemotherapy and radiation? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'KEYNOTE-775', 'filter': {'condition': 'Endometrial Cancer'}}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}] 
+
+ Tool and tool query in subquery : What is the NCCN evidence category and specific recommendation for treatment based on the 'p53abn' molecular subtype in endometrial cancer, and does it include immunotherapy? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'EFO_ID_FROM_FIRST_CALL'}}] 
+
+ Tool and tool query in subquery : Is there a published clinical trial or phase III evidence supporting the use of adjuvant Lenvatinib + Pembrolizumab *after* completing adjuvant chemoradiation for early-stage endometrial cancer? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'Lenvatinib AND Pembrolizumab AND endometrial cancer AND adjuvant', 'filter': {'phase': 'phase3', 'condition': 'Endometrial Cancer', 'intervention': 'Lenvatinib'}, 'post-filter': {'study_type': 'interventional'}}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+*No findings can be generated because no evidence sources have been provided for comparison. All decisions in the treatment plan remain unverified.*
+
+## Verification Gaps
+To validate this treatment plan, evidence is required for every decision point. Specific gaps include:
+1.  **Surgical Staging:** Guidelines on the omission of lymph node dissection for high-grade endometrioid carcinoma based on pre-operative imaging.
+2.  **Adjuvant Chemotherapy:** The recommended regimen (carboplatin/paclitaxel), number of cycles, and patient selection criteria (e.g., based on stage, grade, and molecular profile) for adjuvant therapy.
+3.  **Adjuvant Radiation Therapy:** The indication for vaginal brachytherapy *only* (vs. external beam radiotherapy or no radiation) in this specific clinical and molecular context.
+4.  **Maintenance Therapy:** Evidence supporting the use of lenvatinib + pembrolizumab as maintenance therapy for endometrial cancer with a p53 abnormality (high) that is MMR proficient.
+
+## Strategy for Next Step
+To fill the evidence gaps, perform targeted searches in major clinical guidelines and key trials:
+*   **Primary Guideline Search:** "NCCN Guidelines Endometrial Carcinoma" and "ESGO/ESTRO/ESP Endometrial Cancer Guidelines".
+*   **Specific Therapy Searches:**
+    *   "Adjuvant carboplatin paclitaxel endometrial cancer stage I high grade".
+    *   "PORTEC-3 trial adjuvant therapy endometrial cancer".
+    *   "Vaginal brachytherapy versus external beam radiotherapy endometrial cancer".
+    *   "KEYNOTE-775 trial lenvatinib pembrolizumab endometrial cancer".
+    *   "Maintenance therapy for p53 mutant MMR proficient endometrial cancer".
+
+## References
+*No sources have been provided for citation.* 
+Iteration : 1 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and recommendation for systematic lymph node dissection in clinical Stage I endometrioid carcinoma, FIGO Grade 3, with pre-operative imaging showing no extrauterine disease? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid carcinoma'}}, {'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrioid carcinoma'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrioid carcinoma lymph node dissection stage I', 'filter': 'condition:Endometrial Cancer'}}] 
+
+ Tool and tool query in subquery : Does the NCCN guideline support 6 cycles of adjuvant carboplatin/paclitaxel for Stage I, Grade 3 endometrioid endometrial cancer with p53 abnormality, and what is the evidence category? : 
+
+ [] 
+
+ Tool and tool query in subquery : Is vaginal brachytherapy alone (without external beam radiation) a Category 1 recommendation in the NCCN guidelines for adjuvant treatment of Stage I, Grade 3 endometrioid endometrial cancer? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'vaginal brachytherapy endometrial cancer adjuvant', 'filter': {'condition': 'endometrial cancer'}}}] 
+
+ Tool and tool query in subquery : What is the NCCN recommendation and evidence level for lenvatinib plus pembrolizumab as maintenance therapy in primary, MMR-proficient endometrial cancer with a p53 mutation? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib pembrolizumab maintenance endometrial cancer', 'filter': 'phase:2|phase:3', 'post_filter': 'conditions:Carcinoma, Endometrioid|Neoplasms, Endometrial'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : Are there any 2024 or 2025 NCCN updates that change the adjuvant therapy recommendations for POLE wild-type, p53 abnormal, MMR proficient endometrioid adenocarcinoma? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrioid adenocarcinoma POLE p53 MMR proficient', 'filter': '{"start_date": "2024-01-01"}'}}] 
+
+ Final Answer : 
+
+ ## Audit Findings (So Far)
+
+**Note:** No sources have been provided yet for comparison. Therefore, all assessments of guideline alignment, evidence source, and evidence level are currently **impossible**. The following audit is based on general knowledge of endometrial cancer management, but **cannot be verified** without the retrieved evidence.
+
+- **Decision Point 1**: Surgery – Total hysterectomy/bilateral salpingo-oophorectomy without lymph node dissection.
+  - **Guideline Alignment**: **Unverifiable**. Standard of care for high-grade endometrioid carcinoma typically includes surgical staging with lymph node assessment. The decision to omit it based solely on pre-op imaging is a significant deviation that requires specific guideline support.
+  - **Evidence Source**: *Missing.*
+  - **Evidence Level**: *Missing.*
+
+- **Decision Point 2**: Adjuvant Therapy – 6 cycles of Carboplatin/Paclitaxel chemotherapy.
+  - **Guideline Alignment**: **Unverifiable**. For stage I, high-grade (Grade 3) endometrioid carcinoma with specific high-risk features (e.g., p53abn), adjuvant chemotherapy is often recommended. The specific regimen (Carbo/Taxol) is common, but the guideline-based indication and number of cycles need verification.
+  - **Evidence Source**: *Missing.*
+  - **Evidence Level**: *Missing.*
+
+- **Decision Point 3**: Adjuvant Radiation – Vaginal brachytherapy ONLY.
+  - **Guideline Alignment**: **Unverifiable**. For high-risk early-stage disease (especially with p53abn), guidelines often favor combination external beam radiation therapy (EBRT) with vaginal brachytherapy, or chemotherapy alone, over brachytherapy alone. The use of brachytherapy monotherapy is a potential major discrepancy.
+  - **Evidence Source**: *Missing.*
+  - **Evidence Level**: *Missing.*
+
+- **Decision Point 4**: Maintenance Therapy – Lenvatinib + Pembrolizumab due to p53 mutation.
+  - **Guideline Alignment**: **Likely Inconsistent (based on general knowledge)**. The combination of lenvatinib + pembrolizumab is approved for advanced, **MMR-proficient (pMMR)** endometrial cancer, not based on p53 mutation status. Using it as *maintenance* therapy after adjuvant chemo/radiation for early-stage disease based solely on a p53 mutation is a significant and unvalidated deviation from standard practice.
+  - **Evidence Source**: *Missing.*
+  - **Evidence Level**: *Missing.*
+
+## Verification Gaps
+
+The audit cannot proceed due to a complete lack of evidence sources. The following specific evidence is critically missing to validate this plan:
+1.  **Guideline Source**: The primary source (e.g., NCCN Guidelines, ESMO Guidelines) for managing early-stage, high-grade endometrioid endometrial carcinoma with molecular classification (specifically p53abn).
+2.  **Surgical Staging Evidence**: Guidelines on the necessity of lymph node dissection vs. sentinel lymph node biopsy vs. omission based on imaging for this specific patient profile.
+3.  **Adjuvant Therapy Evidence**: Guidelines specifying the recommended adjuvant treatment pathway (chemotherapy, radiation, or both) for stage I, Grade 3, p53abn endometrial cancer.
+4.  **Radiation Field Evidence**: Evidence supporting vaginal cuff brachytherapy alone versus pelvic external beam radiation therapy for this high-risk group.
+5.  **Maintenance Therapy Evidence**: Any clinical trial data or guideline recommendation supporting the use of lenvatinib/pembrolizumab as maintenance therapy in the early-stage, adjuvant setting, and its link to p53 mutation status.
+
+## Strategy for Next Step
+
+To fill the evidence gaps, the following specific searches must be performed in authoritative databases and guideline repositories:
+1.  Search for the latest **NCCN Clinical Practice Guidelines in Oncology (NCCN Guidelines®) for Uterine Neoplasms**. Focus on sections for "Endometrial Carcinoma" and "Principles of Surgery," "Adjuvant Treatment," and "Molecular Testing."
+2.  Search for **ESMO Clinical Practice Guidelines** on endometrial cancer.
+3.  Search for key clinical trial publications that define adjuvant therapy for high-risk endometrial cancer, specifically:
+    *   **GOG-249**: Phase III trial of pelvic radiation therapy vs. vaginal cuff brachytherapy plus chemotherapy.
+    *   **PORTEC-3**: Phase III trial of chemoradiation vs. radiation alone for high-risk endometrial cancer.
+    *   **ClinicalTrials.gov identifiers** for studies involving lenvatinib/pembrolizumab in the adjuvant or maintenance setting (likely none exist for early-stage disease).
+4.  Search for literature on the **ProMisE (Proactive Molecular Risk Classifier for Endometrial Cancer)** or **TCGA molecular classification** to verify the standard treatment recommendations for the "p53abn" molecular subgroup.
+
+## References
+*No sources have been provided for citation.* 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and recommendation (2025) for adjuvant chemotherapy with carboplatin/paclitaxel in Stage I-II, FIGO Grade 3 endometrioid adenocarcinoma with p53 abnormal (high) and MMR proficient molecular profile? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid adenocarcinoma'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant carboplatin paclitaxel', 'filter': 'phase:3 AND status:completed'}}] 
+
+ Tool and tool query in subquery : For a patient with high-grade (Grade 3) endometrioid carcinoma and abnormal p53 expression, what are the NCCN and ESMO (2025) recommendations for the type and field of adjuvant radiation therapy (vaginal cuff brachytherapy vs. external beam pelvic radiation)? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrioid carcinoma adjuvant radiation therapy p53', 'filter': 'phase:NOT_NULL status:RECRUITING,ACTIVE_NOT_RECRUITING,COMPLETED', 'post_filter': '{"include": ["NCTId", "BriefTitle", "Condition", "InterventionName", "OfficialTitle"], "where": {"Condition": {"like": "%endometrioid%"}, "InterventionName": {"like": "%radiation%brachytherapy%"}}}'}}] 
+
+ Tool and tool query in subquery : Does the Keynote-775 trial support the use of lenvatinib + pembrolizumab as adjuvant maintenance therapy for early-stage, MMR proficient, p53 mutant endometrial cancer? What is the NCCN Category for this use? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'KEYNOTE-775', 'filter': {'condition': 'endometrial cancer', 'intervention': ['lenvatinib', 'pembrolizumab']}}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}] 
+
+ Tool and tool query in subquery : According to NCCN Guidelines (2025), what are the indications for omitting lymph node dissection in the surgical staging of high-grade (Grade 3) endometrial carcinoma? Is pre-operative imaging alone sufficient justification? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial carcinoma'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': ''}}] 
+
+ Tool and tool query in subquery : For molecularly classified endometrial cancer (ProMisE), what is the standard adjuvant therapy recommendation (NCCN/ESMO) for the 'p53abnormal' subgroup in Stage I disease? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant therapy stage I p53 abnormal ProMisE', 'filter': 'phase:phase3|phase4', 'post_filter': 'status:completed'}}] 
+
+ Tool and tool query in subquery : Have the 2024 or 2025 updates to NCCN or ESMO guidelines for endometrial cancer introduced any new recommendations or contraindications regarding the use of immunotherapy (e.g., pembrolizumab) in the adjuvant setting for MMR proficient tumors? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer pembrolizumab adjuvant', 'filter': 'advanced'}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+*No evidence has been retrieved yet. A comprehensive comparison and grading of the treatment plan against guidelines cannot be performed.*
+
+## Verification Gaps
+The following specific clinical decisions in the treatment plan cannot be verified without accessing the relevant guidelines and evidence:
+1.  **Surgical Staging**: The decision to perform a total hysterectomy with bilateral salpingo-oophorectomy **without** lymph node dissection for a FIGO Grade 3 endometrioid adenocarcinoma.
+2.  **Adjuvant Chemotherapy**: The selection of adjuvant carboplatin/paclitaxel for 6 cycles for this specific patient profile (Grade 3, p53 abnormal, MMR proficient, POLE wild-type).
+3.  **Adjuvant Radiation Therapy**: The recommendation for vaginal brachytherapy **only** (i.e., no external beam radiation therapy) in the adjuvant setting.
+4.  **Maintenance Therapy**: The use of lenvatinib plus pembrolizumab as maintenance therapy specifically due to the presence of a p53 mutation.
+
+## Strategy for Next Step
+To validate this treatment plan, the following specific evidence searches are required:
+1.  **Primary Guideline Search**: Retrieve the latest National Comprehensive Cancer Network (NCCN) Guidelines for Uterine Neoplasms. This is the primary source to verify standard surgical staging, adjuvant chemotherapy indications, and radiation therapy fields (brachytherapy vs. external beam).
+2.  **Molecular-Based Therapy Evidence**: Search for clinical trial data and guideline recommendations regarding the use of immune checkpoint inhibitor (pembrolizumab) and VEGF-targeted (lenvatinib) therapy in the **maintenance** setting for advanced or high-risk endometrial cancer, particularly in patients with p53 abnormal (p53-mutant) tumors. Key trials to look for include NRG-GY018, RUBY, and DUO-E.
+3.  **Radiation Therapy Criteria**: Search within the NCCN guidelines and supporting literature (e.g., PORTEC trials) for the specific criteria that recommend vaginal cuff brachytherapy alone versus brachytherapy combined with external beam pelvic radiation therapy for high-grade endometrioid carcinoma.
+
+## References
+*No sources have been provided or retrieved.* 
+Iteration : 1 
+
+ Tool and tool query in subquery : NCCN Guidelines endometrial cancer surgical staging lymph node dissection Grade 3 clinically early-stage 2025 : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer lymph node dissection staging', 'filter': 'advancedSearch:"endometrial cancer" AND "lymph node dissection" AND "staging"'}}] 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and recommendation for sentinel lymph node mapping versus systematic lymphadenectomy in clinically early-stage, Grade 3 endometrioid endometrial cancer? : 
+
+ [] 
+
+ Tool and tool query in subquery : Does NCCN recommend 6 cycles of adjuvant carboplatin/paclitaxel for Stage I, Grade 3, MMR-proficient endometrioid adenocarcinoma, and what is the evidence category? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrioid adenocarcinoma carboplatin paclitaxel adjuvant', 'filter': '{"status": "completed", "phase": "phase_3"}', 'post_filter': '{"arms.interventions.intervention_name": ["Carboplatin", "Paclitaxel"], "condition": ["Endometrial Cancer", "Endometrioid Adenocarcinoma"]}'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid adenocarcinoma'}}] 
+
+ Tool and tool query in subquery : Is vaginal brachytherapy alone (without external beam radiation) considered adequate adjuvant therapy for Stage I, Grade 3 endometrioid cancer with p53 abnormality per NCCN guidelines? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'vaginal brachytherapy adjuvant endometrioid endometrial cancer stage I grade 3', 'filter': 'condition:Endometrial Cancer'}}, {'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}] 
+
+ Tool and tool query in subquery : Is there any NCCN guideline support or Category of Evidence for using lenvatinib plus pembrolizumab as adjuvant maintenance therapy in early-stage, MMR-proficient endometrial cancer, regardless of p53 status? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib pembrolizumab adjuvant endometrial cancer', 'post_filter': {'conditions': ['endometrial cancer'], 'interventions': ['lenvatinib', 'pembrolizumab'], 'phases': ['Phase 3']}}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}, {'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : How do the NCCN guidelines recommend tailoring adjuvant therapy (chemotherapy, radiation) based on a p53 abnormal (high) molecular profile in endometrioid endometrial cancer? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'EFO_ID_PLACEHOLDER'}}] 
+
+ Tool and tool query in subquery : Have the 2024 or 2025 NCCN guidelines introduced new recommendations for adjuvant systemic therapy in high-risk early-stage endometrial cancer, particularly regarding immunotherapy? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant immunotherapy', 'filter': 'cond=Endometrial Cancer&intr=Immunotherapy&phase=phase 3&stage=Early'}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+
+- **Decision Point 1**: Surgery (Total hysterectomy with bilateral salpingo-oophorectomy without lymph node dissection)
+  - **Guideline Alignment**: Cannot Verify (Missing Data)
+  - **Evidence Source**: The provided evidence does not address surgical management.
+  - **Evidence Level**: N/A
+
+- **Decision Point 2**: Adjuvant Therapy (Carboplatin + Paclitaxel for 6 cycles)
+  - **Guideline Alignment**: Cannot Verify (Missing Data)
+  - **Evidence Source**: The provided evidence does not address first-line adjuvant chemotherapy regimens.
+  - **Evidence Level**: N/A
+
+- **Decision Point 3**: Radiation (Vaginal brachytherapy ONLY)
+  - **Guideline Alignment**: Cannot Verify (Missing Data)
+  - **Evidence Source**: The provided evidence does not address adjuvant radiation therapy.
+  - **Evidence Level**: N/A
+
+- **Decision Point 4**: Maintenance Therapy (Lenvatinib + Pembrolizumab due to p53 mutation)
+  - **Guideline Alignment**: **Inconsistent**
+  - **Evidence Source**: The evidence states Lenvatinib + Pembrolizumab is approved for **advanced endometrial carcinoma** that is MMR proficient, **following prior systemic therapy**, and **for patients not candidates for curative surgery or radiation** [^^1].
+  - **Evidence Level**: N/A (Approval criteria, not a guideline level)
+  - **WARNING**: The patient's plan applies this combination as first-line **maintenance** therapy immediately after adjuvant chemoradiation for a presumably curative case. This directly contradicts the approved indication, which is for advanced, previously treated disease in patients not eligible for curative intent therapy.
+
+## Verification Gaps
+1.  **Surgical Standard of Care**: Specific NCCN or ESMO guidelines for lymph node assessment in high-grade endometrioid endometrial cancer are needed.
+2.  **Adjuvant Therapy Standard**: Evidence supporting the use of adjuvant carboplatin/paclitaxel for FIGO Grade 3 endometrioid adenocarcinoma post-surgery is required.
+3.  **Radiation Therapy Indications**: Guidelines defining the role and extent (brachytherapy vs. external beam) of adjuvant radiation for this specific histology and grade are missing.
+4.  **Role of p53 Status**: The retrieved evidence does not support using p53 mutation status alone to select Lenvatinib + Pembrolizumab therapy.
+5.  **Maintenance Therapy Evidence**: No data was retrieved supporting the use of Lenvatinib + Pembrolizumab as maintenance therapy following adjuvant chemoradiation for early-stage endometrial cancer.
+
+## Strategy for Next Step
+To fill the critical gaps and properly audit this plan, the following specific evidence searches are required:
+1.  Search for the latest **NCCN Clinical Practice Guidelines in Oncology (NCCN Guidelines®) for Uterine Neoplasms** to verify standards for surgery, adjuvant chemotherapy, and radiation therapy for Stage I-III, Grade 3 endometrioid carcinoma.
+2.  Search for **phase III clinical trials** (e.g., GOG-258, PORTEC-3) that define the standard adjuvant treatment for high-risk endometrial cancer.
+3.  Search specifically for evidence on **maintenance therapy in endometrial cancer**, particularly focusing on targeted/immunotherapy combinations like lenvatinib/pembrolizumab in the post-adjuvant setting. The KEYNOTE-775 trial data (which supports the advanced disease approval) should be reviewed to confirm its ineligibility for this clinical scenario.
+
+## References
+[^^1] Retrieved Evidence paragraph 1.
+
+ 
+Iteration : 1 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence for omitting lymph node dissection (sentinel mapping or lymphadenectomy) in clinical stage I endometrioid endometrial cancer, FIGO Grade 3? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}] 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence for adjuvant chemotherapy with carboplatin (AUC 5) and paclitaxel (175 mg/m²) for 6 cycles in stage I-II high-grade endometrioid endometrial cancer? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant carboplatin paclitaxel stage I stage II high grade', 'filter': 'phase:phase_3'}}, {'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : What is the NCCN recommendation and evidence category for adjuvant radiation therapy (vaginal brachytherapy alone versus external beam radiation therapy) in high-risk endometrial cancer after surgery? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'EFO_ID_FROM_PREVIOUS_STEP', 'additionalFilters': {'searchTerm': 'NCCN adjuvant radiation therapy endometrial cancer'}}}] 
+
+ Tool and tool query in subquery : Does the NCCN guideline support the use of lenvatinib plus pembrolizumab as maintenance therapy after adjuvant chemoradiation in endometrial cancer? What is the category of evidence? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib AND pembrolizumab AND endometrial cancer AND maintenance therapy', 'filter': {'condition': 'endometrial cancer'}}}] 
+
+ Tool and tool query in subquery : What is the NCCN recommended adjuvant therapy for p53 abnormal (high), MMR proficient, POLE wild-type endometrioid endometrial cancer, and what is the evidence category? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'POLE'}}] 
+
+ Final Answer : 
+
+ ## Audit Findings (So Far)
+
+- **Decision Point 1**: Surgery (Total hysterectomy with bilateral salpingo-oophorectomy) without lymph node dissection.
+    - **Guideline Alignment**: Unverifiable / Incomplete Data
+    - **Evidence Source**: The provided evidence does not contain specific surgical recommendations from NCCN guidelines for this histology and grade. [^^1]
+    - **Evidence Level**: Cannot be assigned. The audit notes that a search for NCCN guideline data returned an empty result set.
+
+- **Decision Point 2**: Adjuvant Therapy (6 cycles of Carboplatin + Paclitaxel).
+    - **Guideline Alignment**: Unverifiable / Incomplete Data
+    - **Evidence Source**: The provided evidence does not contain specific adjuvant chemotherapy recommendations from NCCN guidelines for stage I-III endometrioid grade 3 carcinoma. [^^1]
+    - **Evidence Level**: Cannot be assigned. The audit notes that a search for clinical studies returned an empty result set.
+
+- **Decision Point 3**: Adjuvant Radiation (Vaginal brachytherapy ONLY).
+    - **Guideline Alignment**: Unverifiable / Potentially Inconsistent
+    - **Evidence Source**: The provided evidence does not contain specific radiation therapy recommendations from NCCN guidelines. For high-grade (Grade 3) disease, standard adjuvant therapy often includes external beam radiation therapy (EBRT) with or without brachytherapy, not brachytherapy alone. The absence of guideline data prevents verification. [^^1]
+    - **Evidence Level**: Cannot be assigned.
+
+- **Decision Point 4**: Adjuvant Maintenance Therapy (Lenvatinib + Pembrolizumab).
+    - **Guideline Alignment**: **INCONSISTENT (MAJOR WARNING)**
+    - **Evidence Source**: The retrieved evidence explicitly states the approved indication for lenvatinib + pembrolizumab: for **advanced** endometrial carcinoma that is pMMR, **following prior systemic therapy**, and for patients **not candidates for curative surgery or radiation**. This patient is post-curative surgery and is being proposed for this regimen as *first-line adjuvant maintenance*, which falls outside the approved indication. [Retrieved Evidence Text]
+    - **Evidence Level**: Not applicable for this clinical scenario. This combination is not indicated as adjuvant maintenance therapy in the provided evidence.
+
+## Verification Gaps
+
+1.  **Specific NCCN Guidelines**: The core gap is the lack of the actual NCCN Guideline recommendations for the adjuvant management of Stage I (assumed, based on no lymphadenectomy) endometrioid adenocarcinoma, FIGO Grade 3. Needed are:
+    *   Recommendations for lymph node assessment/surgical staging.
+    *   Recommendations for adjuvant chemotherapy (regimen, number of cycles).
+    *   Recommendations for adjuvant radiation therapy (EBRT vs. brachytherapy vs. both).
+2.  **Clinical Trial Data**: No relevant clinical study data was retrieved to support or refute the specific treatment plan, particularly the use of chemo-radiation sequencing or the novel maintenance approach.
+3.  **Molecularly-Directed Therapy**: While the TP53 mutation is noted, the evidence does not provide guidance on how this specific aberration should modify standard adjuvant treatment for early-stage disease. The identified relevant drug (Dostarlimab) is not mentioned in the plan.
+
+## Strategy for Next Step
+
+1.  **Primary Search**: Directly query the NCCN Guidelines for Endometrial Carcinoma (accessible via [^^1]) for the specific pathways related to "Endometrioid Carcinoma, Grade 3" following primary surgery. Focus on the "Adjuvant Treatment" algorithm for stages I-IV.
+2.  **Secondary Search**: Search for clinical trials (e.g., on clinicaltrials.gov or in literature databases) using terms: `"endometrioid adenocarcinoma" "grade 3" adjuvant "carboplatin paclitaxel"` and `"endometrial cancer" "maintenance" "lenvatinib pembrolizumab"` to see if any ongoing or completed trials support this approach in the adjuvant setting.
+3.  **Tertiary Search**: Search for evidence or guidelines regarding the prognostic/therapeutic impact of a **TP53 abnormal (high)** expression result in otherwise early-stage endometrioid cancers to see if it justifies escalation of therapy.
+
+## References
+
+[^^1] https://www.nccn.org/guidelines/category_1 — NCCN Guidelines
+
+
+[^^2] https://www.ebi.ac.uk/efo/EFO_1000233 — EFO: Endometrial Endometrioid Adenocarcinoma
+
+ 
+User Qeury : Audit this plan against NCCN guidelines 
+Iteration : 0 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and recommendation for omitting lymph node dissection in clinical stage I, grade 3 endometrioid endometrial cancer with normal preoperative imaging? : 
+
+ [] 
+
+ Tool and tool query in subquery : For stage I, grade 3 endometrioid endometrial cancer with no residual disease post-hysterectomy, what is the NCCN Category of Evidence for adjuvant chemotherapy with carboplatin and paclitaxel? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'stage I grade 3 endometrioid endometrial cancer adjuvant chemotherapy carboplatin paclitaxel', 'filter': 'phase:Phase 3'}}] 
+
+ Tool and tool query in subquery : Does the NCCN guidelines recommend vaginal brachytherapy alone (without external beam radiation) for stage I, grade 3 endometrioid endometrial cancer after surgery and adjuvant chemotherapy? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer brachytherapy adjuvant', 'filter': '{"condition":"endometrial cancer","intervention":"brachytherapy"}'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}] 
+
+ Tool and tool query in subquery : Is lenvatinib in combination with pembrolizumab a Category 1 recommendation in the NCCN guidelines for first-line maintenance therapy in p53 abnormal (p53abn), MMR proficient endometrial cancer? : 
+
+ [] 
+
+ Tool and tool query in subquery : Are there new ESMO or NCCN guideline updates (2024 or 2025) that restrict the use of immunotherapy (pembrolizumab/lenvatinib) to MMR deficient (dMMR) tumors only in the first-line setting? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'EFO_ID_PLACEHOLDER'}}] 
+
+ Tool and tool query in subquery : According to the ESMO 2024 molecular classification algorithm, is POLE wild-type, p53 abnormal, MMR proficient endometrial cancer definitively classified as 'p53abn' and what is the standard recommended adjuvant treatment pathway for this group? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+
+- **Decision Point 1: Primary Surgery (Total hysterectomy with bilateral salpingo-oophorectomy, no lymph node dissection)**
+  - **Guideline Alignment**: Cannot Verify (Missing Data)
+  - **Evidence Source**: No NCCN or other surgical management guidelines were retrieved in the evidence. The decision to forgo lymph node dissection based on pre-op imaging requires specific guideline context.
+  - **Evidence Level**: Not Applicable
+
+- **Decision Point 2: Adjuvant Chemotherapy (Carboplatin + Paclitaxel for 6 cycles)**
+  - **Guideline Alignment**: Cannot Verify (Missing Data)
+  - **Evidence Source**: No evidence was retrieved regarding adjuvant chemotherapy regimens for stage I-III endometrial carcinoma. The appropriateness of this specific regimen for this patient's grade and molecular profile cannot be assessed.
+  - **Evidence Level**: Not Applicable
+
+- **Decision Point 3: Adjuvant Radiation (Vaginal brachytherapy ONLY)**
+  - **Guideline Alignment**: Cannot Verify (Missing Data)
+  - **Evidence Source**: No evidence was retrieved regarding adjuvant radiation therapy recommendations (e.g., vaginal cuff brachytherapy vs. external beam radiation) based on surgical pathology and risk factors.
+  - **Evidence Level**: Not Applicable
+
+- **Decision Point 4: Maintenance Therapy (Lenvatinib + Pembrolizumab)**
+  - **Guideline Alignment**: **Inconsistent / WARNING**
+  - **Evidence Source**: The retrieved evidence states LENVIMA (lenvatinib) is indicated for advanced endometrial carcinoma in combination with pembrolizumab [^^3]. KEYTRUDA (pembrolizumab) is indicated for MSI-H/dMMR solid tumors [^^2].
+  - **Evidence Level**: FDA Approval (for advanced/metastatic setting)
+  - **Analysis**: The plan proposes this combination as *maintenance* therapy following adjuvant chemo-radiation for a presumably early-stage cancer (post-surgery). The FDA indication is for **advanced** endometrial carcinoma. Furthermore, the patient's tumor is **MMR proficient**, not MSI-H/dMMR, which is a key biomarker for pembrolizumab monotherapy in endometrial cancer. The use of a p53 abnormality as the rationale is not supported by the provided evidence for this specific drug combination. This represents a significant discrepancy from standard, evidence-based indications.
+
+## Verification Gaps
+1.  **Missing NCCN Guidelines:** The core deficiency is the complete lack of retrieved NCCN or other society guidelines for the management of endometrioid endometrial adenocarcinoma (staging, surgery, adjuvant therapy).
+2.  **Adjuvant Therapy Context:** Specific evidence is needed to verify if adjuvant carboplatin/paclitaxel is indicated for a FIGO Grade 3, p53 abnormal, MMR proficient tumor following surgery.
+3.  **Radiation Therapy Indications:** Evidence is missing to determine if vaginal brachytherapy alone is sufficient or if external beam radiation therapy is recommended based on final pathology (depth of invasion, LVSI, etc.).
+4.  **Maintenance Therapy Indication:** Clear evidence is needed on whether lenvatinib+pembrolizumab has any role in the adjuvant/consolidation/maintenance setting for early-stage endometrial cancer, irrespective of p53 status.
+
+## Strategy for Next Step
+To fill the critical evidence gaps, the following specific searches must be performed:
+1.  **Search for NCCN Guidelines:** Query "NCCN Guidelines Uterine Neoplasms" or "NCCN endometrial cancer" to retrieve the definitive standard-of-care document for surgical management, adjuvant therapy selection (chemotherapy and/or radiation), and risk stratification.
+2.  **Search for Adjuvant Therapy Trials:** Query "GOG-249 adjuvant endometrial cancer" or "PORTEC-3 trial" to obtain high-level evidence supporting specific chemo-radiation sequences for high-risk early-stage disease.
+3.  **Search for Biomarker-Driven Therapy:** Query "pembrolizumab lenvatinib endometrial cancer KEYNOTE-775" to retrieve the specific trial data supporting the FDA indication for advanced disease and understand the patient population (e.g., prior systemic therapy, MMR status).
+4.  **Search for p53 Significance:** Query "p53 mutation endometrial cancer treatment implications" to understand if this molecular finding alters standard adjuvant therapy recommendations outside of advanced disease settings.
+
+## References
+[^^2]: KEYTRUDA QLEX (pembrolizumab + hyaluronidase alfa) is indicated for numerous cancers, including unresectable/metastatic melanoma, certain stages of NSCLC, malignant pleural mesothelioma, head and neck squamous cell carcinoma, urothelial cancer, muscle-invasive bladder cancer, non-muscle invasive bladder cancer, and **MSI-H/dMMR solid tumors** in adults and pediatric patients (12+).
+
+
+[^^3]: LENVIMA (lenvatinib) is indicated for advanced/metastatic thyroid cancer, advanced renal cell carcinoma (in combination with pembrolizumab or everolimus), unresectable hepatocellular carcinoma, and **advanced endometrial carcinoma (in combination with pembrolizumab)**.
+
+ 
+Iteration : 1 
+
+ Tool and tool query in subquery : NCCN Category of Evidence for omitting lymph node dissection in clinical Stage I Grade 3 endometrioid endometrial cancer based on pre-operative imaging : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer lymph node dissection', 'filter': '{"conditions": ["Endometrial Cancer"], "interventions": ["Lymph Node Dissection", "Sentinel Lymph Node Biopsy"], "phases": ["PHASE3", "PHASE4"]}'}}] 
+
+ Tool and tool query in subquery : NCCN guidelines adjuvant chemotherapy carboplatin paclitaxel for Stage I-II high-risk endometrioid endometrial cancer evidence category 2025 : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'carboplatin paclitaxel endometrial cancer adjuvant', 'filter': 'overallStatus:Completed'}}] 
+
+ Tool and tool query in subquery : NCCN recommendation vaginal brachytherapy alone versus external beam radiation therapy for Stage I Grade 3 endometrioid endometrial cancer 2024 : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': None, 'filter': 'year:2024'}}] 
+
+ Tool and tool query in subquery : NCCN guidelines biomarker p53 abnormal mutation status indication for lenvatinib plus pembrolizumab in endometrial cancer : 
+
+ [{'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib pembrolizumab endometrial cancer', 'filter': 'phase:phase_2 phase_3', 'post_filter': 'status:active completed'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'TP53'}}] 
+
+ Tool and tool query in subquery : NCCN Category of Evidence for maintenance therapy with lenvatinib and pembrolizumab after adjuvant therapy in early-stage endometrial cancer : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'lenvatinib pembrolizumab endometrial cancer adjuvant maintenance', 'filter': 'advanced|phase=3'}}, {'tool_name': 'get_study', 'tool_input': {'nct_id': 'NCT05255653', 'format': 'json'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : NCCN updates 2024 2025 KEYNOTE-775 lenvatinib pembrolizumab endometrial cancer adjuvant setting : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'KEYNOTE-775 lenvatinib pembrolizumab endometrial', 'filter': 'current_trial_status:COMPLETED|ACTIVE_NOT_RECRUITING'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib'}}, {'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Final Answer : 
+
+ ## Audit Findings (So Far)
+
+- **Decision Point 1**: Surgery - Total hysterectomy with bilateral salpingo-oophorectomy (TH-BSO) without lymph node dissection.
+  - **Guideline Alignment**: Partial (Cannot verify lymph node decision)
+  - **Evidence Source**: No specific surgical guideline was retrieved in the provided evidence. The RAINBO program trial [^^1] investigates adjuvant therapies post-surgery but does not detail surgical standards.
+  - **Evidence Level**: Not Assignable (Lack of specific guideline)
+
+- **Decision Point 2**: Adjuvant Therapy - 6 cycles of Carboplatin/Paclitaxel.
+  - **Guideline Alignment**: Partial
+  - **Evidence Source**: The RAINBO umbrella program includes the p53abn-RED trial for tumors with abnormal p53, which tests adjuvant chemoradiation (carboplatin/paclitaxel + radiotherapy) [^^1]. The plan uses chemotherapy alone, omitting concurrent external beam radiation.
+  - **Evidence Level**: Clinical Trial Protocol [^^1]
+
+- **Decision Point 3**: Radiation - Vaginal brachytherapy ONLY.
+  - **Guideline Alignment**: Inconsistent
+  - **Evidence Source**: The relevant p53abn-RED trial within the RAINBO program tests "chemoradiation" [^^1], which typically implies external beam radiotherapy (EBRT) to the pelvis with or without a brachytherapy boost. The plan's "vaginal brachytherapy ONLY" is a significant deviation from the chemoradiation approach under investigation for this molecular subtype.
+  - **Evidence Level**: Clinical Trial Protocol [^^1]
+  - **WARNING**: Plan omits external beam radiation, which is a core component of the adjuvant regimen being studied for p53abn endometrial cancer.
+
+- **Decision Point 4**: Maintenance Therapy - Lenvatinib + Pembrolizumab.
+  - **Guideline Alignment**: Inconsistent
+  - **Evidence Source**: The provided drug indications state that lenvatinib + pembrolizumab is indicated for **advanced endometrial carcinoma** that is pMMR (proficient mismatch repair) or not MSI-H, **after prior systemic therapy**, in patients not candidates for curative surgery or radiation. This is a treatment for recurrent/metastatic disease, not an approved adjuvant or maintenance therapy following primary surgery and chemo/radiation.
+  - **Evidence Level**: FDA Drug Label Indication
+  - **WARNING**: The plan proposes a therapy approved for advanced, previously treated disease as frontline adjuvant maintenance. There is no evidence in the retrieved sources to support this use in the adjuvant setting for a patient who has undergone curative-intent surgery.
+
+## Verification Gaps
+1.  Specific NCCN or ESMO guideline recommendations for surgical staging (lymph node dissection) in high-grade endometrioid carcinoma.
+2.  Definitive standard-of-care adjuvant therapy for Stage I-III endometrioid carcinoma, FIGO Grade 3, with p53 abnormality. The evidence only provides a clinical trial protocol (p53abn-RED), not an established guideline.
+3.  Evidence supporting the use of lenvatinib + pembrolizumab as adjuvant maintenance therapy following chemotherapy for endometrial cancer.
+
+## Strategy for Next Step
+1.  Search for the latest **NCCN Clinical Practice Guidelines in Oncology (NCCN Guidelines®) for Uterine Neoplasms** to obtain the standard algorithms for surgical management and adjuvant therapy based on stage and molecular profile.
+2.  Search for **phase III trial results or meta-analyses** specifically addressing adjuvant therapy for "p53 mutant" or "serous-like" endometrial cancers to see if carboplatin/paclitaxel alone is a recognized standard.
+3.  Search for any **clinical trials or guidelines** investigating or recommending immune checkpoint inhibitor or TKI-based maintenance therapy after adjuvant chemo/radiation for endometrial cancer.
+
+## References
+[^^1] https://clinicaltrials.gov/ct2/show/NCT05255653 — Refining Adjuvant Treatment in Endometrial Cancer Based on Molecular Features: the P53abn-RED Trial, the MMRd-GREEN Trial, the NSMP-ORANGE Trial and the POLEmut-BLUE Trial
+
+ 
+User Qeury : Audit this plan 
+Iteration : 0 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and recommendation for adjuvant chemotherapy plus external beam radiation therapy (EBRT) for Stage III (FIGO 2009) endometrioid endometrial cancer with nodal metastasis (specifically sentinel lymph node positive)? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant chemotherapy radiation stage III', 'filter': 'phase:phase2 OR phase:phase3', 'post-filter': 'conditions:cancer AND interventions:chemotherapy AND interventions:radiation'}}, {'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}] 
+
+ Tool and tool query in subquery : According to the latest NCCN or ESMO guidelines, how are 'isolated tumor cells' (ITCs), 'micro-metastases', and 'macro-metastases' defined in the context of sentinel lymph node ultrastaging for endometrial cancer, and what are the distinct treatment recommendations for each category? : 
+
+ [] 
+
+ Tool and tool query in subquery : Does the ESMO-ESGO-ESTRO consensus conference or NCCN guidelines support the use of adjuvant chemoradiation (TC + EBRT) for Stage IIIC1 endometrial cancer where nodal involvement is solely based on ITCs identified via ultrastaging? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : What is the NCCN recommended follow-up schedule (frequency, physical exam, imaging, tumor markers) for patients with Stage III endometrial cancer after completion of primary therapy? Specifically, what is the evidence level for monitoring serum CA125, HE4, and CA199? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'EFO_0001074'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer follow-up', 'filter': 'condition:Endometrial Cancer'}}] 
+
+ Tool and tool query in subquery : For a patient with Stage III endometrioid endometrial cancer that is MMR proficient (MLH1/PMS2/MSH2/MSH6 positive), p53 wild-type, and ER/PR positive, do NCCN/ESMO guidelines have specific recommendations regarding the benefit of adjuvant chemotherapy in addition to radiation? : 
+
+ [] 
+
+ Tool and tool query in subquery : Are there any 2024 or 2025 updates to the NCCN Guidelines for Uterine Neoplasms or ESMO Clinical Practice Guidelines that modify the staging, risk classification, or preferred adjuvant treatment for sentinel lymph node ITCs in endometrial cancer? : 
+
+ [] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+
+**Summary:** The retrieved evidence is **inadequate** to perform a meaningful clinical audit of the provided treatment plan. The evidence primarily consists of lists of genes associated with endometrial cancer and the development status of several drugs. It lacks the critical clinical practice guidelines, trial results, and consensus recommendations necessary to verify treatment decisions for a specific stage (III C1) of endometrioid endometrial cancer.
+
+- **Decision Point 1**: Recommendation for adjuvant treatment: "TC方案化疗+EBRT±VB" (TC chemotherapy + External Beam Radiotherapy ± Vaginal Brachytherapy).
+  - **Guideline Alignment**: **Cannot be verified / Inconsistent with available evidence**. The plan recommends a combination of chemotherapy and radiotherapy, which is a common approach for stage III disease. However, the retrieved evidence provides **no** information on standard-of-care adjuvant therapy regimens, the role of sentinel lymph node mapping results (micro/macrometastases), or the specific integration of chemotherapy and radiation.
+  - **Evidence Source**: Not available in retrieved evidence.
+  - **Evidence Level**: Not applicable.
+
+- **Decision Point 2**: Post-treatment surveillance frequency and duration.
+  - **Guideline Alignment**: **Cannot be verified**. The suggested follow-up schedule (every 3-6 months for 2-3 years, then every 6 months to year 5, then annually) is a common paradigm for gynecologic cancers. However, the retrieved evidence provides **no** information on recommended surveillance schedules from professional societies like NCCN, ESGO, or FIGO.
+  - **Evidence Source**: Not available in retrieved evidence.
+  - **Evidence Level**: Not applicable.
+
+- **Decision Point 3**: Follow-up surveillance content (pelvic exam, CA125, HE4, CA19-9, imaging as indicated).
+  - **Guideline Alignment**: **Cannot be verified / Partial**. The use of tumor markers (CA125, HE4) and imaging for suspected recurrence is common. The specific combination of CA125, HE4, and CA19-9, and their routine use in asymptomatic surveillance, requires guideline validation. The retrieved evidence provides **no** data on recommended surveillance modalities.
+  - **Evidence Source**: Not available in retrieved evidence.
+  - **Evidence Level**: Not applicable.
+
+## Verification Gaps
+The current evidence is entirely insufficient for clinical audit purposes. Critical missing data includes:
+1.  **Clinical Practice Guidelines:** The complete absence of referenced treatment guidelines (e.g., NCCN Guidelines, ESGO-ESTRO-ESP guidelines) for stage III endometrioid endometrial cancer.
+2.  **Therapeutic Evidence:** No data from key clinical trials (e.g., GOG-258, PORTEC-3) that define the standard of care for adjuvant therapy in stage III disease, particularly regarding the integration of chemotherapy (like TC: paclitaxel/carboplatin) with radiotherapy (EBRT ± VB).
+3.  **Sentinel Node Staging Guidance:** No evidence on how the finding of sentinel lymph node metastasis (including isolated tumor cells vs. micro/macrometastasis) should guide adjuvant therapy decisions.
+4.  **Surveillance Protocols:** No evidence from guidelines detailing the recommended frequency, duration, and components (examination, imaging, tumor markers) of follow-up for stage III endometrial cancer.
+5.  **Biomarker-Driven Therapy:** While the evidence lists genes (e.g., MSH2, MSH6, PTEN, PIK3CA) and drugs (e.g., Pembrolizumab, Dostarlimab), it does not connect these to specific treatment recommendations for patients with MMR-proficient (as in this case, MLH1+, PMS2+) or other biomarker-defined subgroups within stage III disease.
+
+## Strategy for Next Step
+To properly audit this treatment plan, the following specific searches for clinical evidence are required:
+1.  Search for the latest **"NCCN Guidelines for Uterine Neoplasms"** (or equivalent ESMO/ESGO guidelines).
+2.  Search for key clinical trials informing adjuvant therapy for stage III endometrial cancer. Search terms: `"GOG 258" endometrial cancer stage III adjuvant chemoradiation`, `"PORTEC 3" endometrial cancer high risk adjuvant`.
+3.  Search for guidelines or consensus statements on the **clinical management of sentinel lymph node metastasis** in endometrial cancer, specifically addressing `"isolated tumor cells"` and `"micro-metastasis"`.
+4.  Search for guidelines on **"surveillance"** or **"follow-up"** for `"endometrial cancer stage III"`.
+5.  Search for evidence on the use of **tumor markers (CA125, HE4)** in the surveillance of endometrial cancer.
+
+## References
+*The retrieved evidence provided was insufficiently specific for clinical audit citation. No guideline sources were available to cite.* 
+Iteration : 1 
+
+ Tool and tool query in subquery : According to the latest NCCN Guidelines for Uterine Neoplasms, what is the Category of Evidence and recommendation for adjuvant chemotherapy combined with external beam radiotherapy (EBRT) for Stage IIIC1 endometrioid endometrial cancer (FIGO 2009) with nodal micrometastasis and presence of lymphovascular space invasion (LVSI)? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial cancer'}}] 
+
+ Tool and tool query in subquery : What do the ESMO Clinical Practice Guidelines (2023 or later) recommend regarding adjuvant treatment for stage IIIC1 endometrial cancer with sentinel lymph node micrometastasis versus isolated tumor cells (ITCs)? Please specify the recommended therapy for each finding. : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'adjuvant treatment endometrial cancer stage IIIC1 sentinel lymph node micrometastasis isolated tumor cells', 'filter': '{"include": ["Interventional"], "conditions": ["Endometrial Cancer"], "interventions": ["Drug", "Radiation"]}'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : For stage III endometrioid endometrial cancer with no specific molecular profile (NSMP / p53 wild-type, MMR proficient), do the current NCCN or ESMO guidelines support omitting adjuvant radiotherapy based on molecular classification alone, or is combined modality therapy still standard? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'stage III endometrioid endometrial cancer adjuvant radiotherapy molecular classification', 'filters': {'condition': 'Endometrial Cancer', 'intervention': 'Radiotherapy'}}}] 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence for adjuvant carboplatin and paclitaxel (TC regimen) chemotherapy in stage III endometrial carcinoma? Please reference the specific version of the guidelines (e.g., 2025). : 
+
+ [] 
+
+ Tool and tool query in subquery : In the follow-up of asymptomatic patients with stage III endometrial cancer, what is the NCCN recommendation level (and ESMO evidence level) for the routine use of serum tumor markers CA125, HE4, and CA199 during surveillance? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer surveillance', 'filter': '("condition":"Endometrial Cancer", "phase":"NA", "status":"COMPLETED")', 'post_filter': '("eligibility_criteria":"stage III")'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'CA125 endometrial cancer surveillance', 'filter': '("condition":"Endometrial Cancer", "status":"COMPLETED")', 'post_filter': '("intervention_name":"CA-125 Antigen")'}}] 
+
+ Tool and tool query in subquery : Based on the KEYNOTE-775 trial results and subsequent updates, what is the current NCCN recommendation (Category and preference) for pembrolizumab plus lenvatinib for patients with advanced or recurrent MMR proficient (pMMR) endometrial cancer, and is there any evidence supporting its use in the adjuvant setting for stage III disease? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'KEYNOTE-775 pembrolizumab lenvatinib endometrial cancer', 'filter': 'advanced OR recurrent OR stage III', 'post-filter': 'status:COMPLETED|ACTIVE_NOT_RECRUITING|RECRUITING'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'pembrolizumab lenvatinib adjuvant endometrial cancer stage III', 'filter': 'phase:PHASE3', 'post-filter': 'status:COMPLETED|ACTIVE_NOT_RECRUITING|RECRUITING'}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'pembrolizumab', 'limit': 10}}, {'tool_name': 'get_indications_by_drug_name', 'tool_input': {'drug_name': 'lenvatinib', 'limit': 10}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Final Answer : 
+
+ ## Audit Findings (So Far)
+
+- **Decision Point 1: Post-surgical diagnosis of Stage III C1 (FIGO 2009) / pT1bN1(sn)M0.**
+  - **Guideline Alignment**: Cannot Verify. The retrieved evidence does not contain information on FIGO staging criteria or the definition of nodal stages based on sentinel lymph node mapping.
+  - **Evidence Source**: Not available in retrieved evidence.
+  - **Evidence Level**: N/A
+
+- **Decision Point 2: Recommendation for adjuvant therapy with "TC chemotherapy + EBRT ± VB" (likely carboplatin/paclitaxel + external beam radiotherapy ± vaginal brachytherapy).**
+  - **Guideline Alignment**: Inconsistent / Largely Unverified. The retrieved evidence does not mention adjuvant chemotherapy (e.g., paclitaxel+carboplatin) or radiotherapy as a standard for endometrial cancer. Instead, it discusses targeted/immunotherapy agents (pembrolizumab, lenvatinib) for advanced/metastatic settings.
+      - **Specifically**: Evidence states that pembrolizumab + lenvatinib is indicated for **advanced endometrial carcinoma that is not MSI-H/dMMR, following prior systemic therapy**. This clinical scenario (post-cytoreductive surgery for Stage III disease) does not match the "prior systemic therapy" requirement for this combination.
+  - **Evidence Source**: The evidence describes pembrolizumab and lenvatinib for advanced disease post-progression [^^1]. It does not provide support for adjuvant TC or radiotherapy.
+  - **Evidence Level**: N/A for the proposed plan.
+
+- **Decision Point 3: Recommendation to clarify pathology report regarding "isolated tumor cells, micrometastasis, or macrometastasis" in sentinel lymph nodes.**
+  - **Guideline Alignment**: Partial/Logical, but Unverified. Seeking clarification on nodal metastasis size is a rational clinical step, but the retrieved evidence provides no guidelines or standards for how isolated tumor cells vs. micrometastases should be defined or managed in endometrial cancer.
+  - **Evidence Source**: Not available in retrieved evidence.
+  - **Evidence Level**: N/A
+
+- **Decision Point 4: Proposed follow-up schedule and tests (clinical exam, CA125, HE4, CA199, imaging based on symptoms/risk).**
+  - **Guideline Alignment**: Cannot Verify. The retrieved evidence contains no information on recommended follow-up schedules, frequency of visits, or the utility of specific tumor markers (CA125, HE4, CA199) in surveillance for endometrial cancer.
+  - **Evidence Source**: Not available in retrieved evidence.
+  - **Evidence Level**: N/A
+
+- **Decision Point 5: Immunohistochemistry results showing pMMR (MLH1+, MSH2+, MSH6+, PMS2+), ER/PR+, wild-type p53, PTEN+.**
+  - **Guideline Alignment**: Consistent with Disease Biology, but not with Treatment Plan. The retrieved evidence lists MSH6, MSH2, PTEN, and TP53 as top-associated genetic targets for endometrial cancer, confirming the relevance of these biomarkers. The pMMR/proficient status is consistent with the evidence noting that pembrolizumab+lenvatinib is for pMMR/non-MSI-H disease. However, the treatment plan does not incorporate this biomarker information into its adjuvant therapy recommendation.
+  - **Evidence Source**: Association of MSH6, PTEN, MSH2, and TP53 with endometrial cancer is noted in the evidence [^^1].
+  - **Evidence Level**: N/A (Biomarker association, not a treatment recommendation).
+
+## Verification Gaps
+1.  **Lack of Adjuvant Therapy Guidelines:** The most critical gap. There is no evidence on standard adjuvant treatment (chemotherapy, radiotherapy, or combination) for Stage III (FIGO 2009) endometrioid endometrial cancer.
+2.  **Lack of Follow-up Guidelines:** No evidence on the recommended frequency, duration, or components (specific tumor markers, imaging protocols) of surveillance for endometrial cancer.
+3.  **Lack of Staging & Nodal Classification Criteria:** No evidence defining FIGO stages or the clinical significance of isolated tumor cells/micrometastases in sentinel lymph nodes.
+4.  **Mismatch of Evidence Context:** The available evidence focuses on drugs for advanced/metastatic or post-progression settings, which is not directly applicable to the adjuvant context of this treatment plan.
+
+## Strategy for Next Step
+To validate this treatment plan, the following targeted searches are required:
+1.  **Primary Search:** Query for **"adjuvant therapy for stage III endometrioid endometrial cancer"** or **"NCCN guidelines endometrial cancer adjuvant"** to find the standard-of-care recommendations for chemotherapy and/or radiotherapy in this specific postoperative setting.
+2.  **Secondary Search:** Query for **"endometrial cancer surveillance follow-up guidelines"** to find evidence supporting the proposed schedule and tests.
+3.  **Tertiary Search:** Query for **"sentinel lymph node micrometastasis endometrial cancer prognosis treatment"** to understand the clinical implications of the nodal findings and whether they alter adjuvant therapy recommendations.
+
+## References
+[^^1]: Retrieved evidence including drug indications (pembrolizumab + lenvatinib for advanced pMMR EC post-progression) and associated genetic targets (MSH6, PTEN, MSH2, TP53).
+
+ 
+User Qeury : Audit this plan 
+Iteration : 0 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and recommendation for adjuvant therapy in stage IIIC1 endometrial cancer (FIGO 2009) with sentinel lymph node micrometastasis or isolated tumor cells? : 
+
+ [] 
+
+ Tool and tool query in subquery : For stage IIIC endometrial carcinoma, what are the respective NCCN and ESMO guideline recommendations and evidence levels for combining adjuvant chemotherapy (carboplatin/paclitaxel) with external beam pelvic radiotherapy? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'stage IIIC endometrial carcinoma'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial carcinoma stage IIIC adjuvant chemotherapy carboplatin paclitaxel external beam pelvic radiotherapy', 'filter': {'intervention': ['carboplatin', 'paclitaxel', 'radiotherapy'], 'phase': ['Phase 3', 'Phase 2/3']}}}] 
+
+ Tool and tool query in subquery : What is the evidence level (NCCN/ESMO) supporting the addition of vaginal brachytherapy boost to external beam pelvic radiotherapy for stage IIIC endometrial cancer after comprehensive surgical staging? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'vaginal brachytherapy boost external beam radiotherapy endometrial cancer stage IIIC', 'filter': '{"status": ["COMPLETED", "ACTIVE_NOT_RECRUITING", "TERMINATED"]}'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : In a patient with pMMR (MLH1/PMS2 proficient) and ER/PR positive endometrial cancer with stage IIIC disease and high-risk features, does the NCCN or ESMO guideline favor adjuvant chemotherapy plus radiotherapy over other options (e.g., chemotherapy alone or targeted therapy), and what is the category of evidence? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant chemotherapy radiotherapy', 'filter': 'phase:3', 'post_filter': 'endometrial cancer AND (pMMR OR mismatch repair proficient) AND (ER positive OR PR positive) AND stage IIIC'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'placeholder_for_efoId_from_first_call', 'additional_params': {'size': 10, 'sort': 'publicationDate:desc', 'filter': 'publicationYear:2020-2024'}}}] 
+
+ Tool and tool query in subquery : According to current NCCN or ESMO guidelines, what is the recommendation category for routine surveillance with serum tumor markers (CA125, HE4, CA199) in asymptomatic patients after treatment for endometrial cancer? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer surveillance tumor markers guidelines', 'filter': {'condition': 'Endometrial Cancer'}}}] 
+
+ Tool and tool query in subquery : How does the FIGO 2023 staging system classify isolated tumor cells and micrometastases in lymph nodes, and does this reclassification change the adjuvant treatment recommendations compared to FIGO 2009 for this patient's profile? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'Endometrial Carcinoma'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'REPLACE_WITH_EFO_ID_FROM_FIRST_CALL', 'addedAfter': '2022-01-01', 'limit': 20}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+
+**Disclaimer:** The audit request returned no available evidence sources (`{"studies": [], "next_page_token": null, "total_count": 0}`). Therefore, the following analysis cannot verify the treatment plan against specific, retrieved clinical guidelines or trial data. All assessments of guideline alignment and evidence levels are **impossible to determine** based on the provided input.
+
+- **Decision Point 1**: Post-operative diagnosis and staging based on pathology.
+    - **Guideline Alignment**: **Cannot Verify**. Staging (FIGO 2009 III C1 / T1bN1(sn)M0) appears consistent with described pathology (deep myometrial invasion, isolated tumor cells in sentinel lymph nodes). However, without guidelines, the validity of using "sn" nomenclature in staging or the specific handling of isolated tumor cells versus micro/macrometastases cannot be assessed.
+    - **Evidence Source**: **No sources retrieved.**
+    - **Evidence Level**: **Cannot assign.**
+
+- **Decision Point 2**: Post-operative management step: "Contact pathology department to clarify isolated cell metastasis, micro-metastasis, or macro-metastasis."
+    - **Guideline Alignment**: **Cannot Verify**. This appears to be a prudent step to inform adjuvant therapy decisions, but its necessity or standard practice cannot be confirmed without guidelines.
+    - **Evidence Source**: **No sources retrieved.**
+    - **Evidence Level**: **Cannot assign.**
+
+- **Decision Point 3**: Recommended adjuvant therapy: "TC方案化疗+EBRT±VB" (likely: Paclitaxel/Carboplatin chemotherapy + External Beam Radiotherapy ± Vaginal Brachytherapy).
+    - **Guideline Alignment**: **Cannot Verify**. For Stage III disease with nodal involvement, combination therapy (chemotherapy and radiation) is a common consideration. However, the specific regimen (TC), sequence, and the optional (±) nature of vaginal brachytherapy cannot be validated.
+    - **Evidence Source**: **No sources retrieved.**
+    - **Evidence Level**: **Cannot assign.**
+
+- **Decision Point 4**: Recommended follow-up schedule and tests.
+    - **Guideline Alignment**: **Cannot Verify**. The proposed frequency (every 3-6 months initially) and tests (exam, CA125, HE4, CA19-9, imaging as needed) are plausible for high-risk endometrial cancer. The use of HE4 and CA19-9 in routine surveillance, in particular, lacks verification.
+    - **Evidence Source**: **No sources retrieved.**
+    - **Evidence Level**: **Cannot assign.**
+
+## Verification Gaps
+The audit lacks **ALL** necessary evidence to validate this plan. Specific missing evidence includes:
+1.  **Guideline Standards:** Current (e.g., NCCN, ESGO/ESTRO/ESP) guidelines for the adjuvant treatment of Stage III endometrial endometrioid carcinoma, particularly for cases with sentinel lymph node mapping and isolated tumor cells.
+2.  **Trial Data:** Evidence from trials (e.g., GOG-258, PORTEC-3) supporting the efficacy of combined chemoradiation versus other strategies for this specific stage and histology.
+3.  **Pathology Classification:** Official definitions and clinical implications of "isolated tumor cells" vs. "micro-metastasis" in endometrial cancer staging and treatment algorithms.
+4.  **Follow-up Protocols:** Evidence-based recommendations for surveillance frequency, optimal tumor markers (CA125, HE4, CA19-9), and imaging strategies in follow-up.
+
+## Strategy for Next Step
+To perform a meaningful audit, targeted searches for the following are required:
+1.  Search for **"NCCN Guidelines Endometrial Carcinoma"** and **"ESGO endometrial cancer guidelines adjuvant therapy"**.
+2.  Search for clinical trials on **"chemoradiation stage III endometrial cancer"** and **"sentinel lymph node isolated tumor cells endometrial cancer"**.
+3.  Search for consensus statements on **"FIGO staging endometrial cancer sentinel lymph node"**.
+4.  Search for **"surveillance follow-up endometrial cancer"** to validate the proposed schedule and tests.
+
+## References
+*No evidence sources were retrieved or are available for citation.* 
+Iteration : 1 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and ESMO level of recommendation for adjuvant carboplatin/paclitaxel chemotherapy PLUS pelvic external beam radiation therapy for stage III (FIGO 2009 IIIC1) endometrioid endometrial carcinoma with sentinel lymph node micro-metastasis? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial carcinoma adjuvant carboplatin paclitaxel radiation', 'post_filter': 'advanced_cancer: III'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial carcinoma'}}] 
+
+ Tool and tool query in subquery : Does the 2024 or 2025 NCCN Guidelines for Uterine Neoplasms endorse sentinel lymph node mapping with ultra-staging as sufficient surgical staging for determining adjuvant therapy in patients with high-grade and/or deep myometrial invasion endometrioid endometrial cancer? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'sentinel lymph node mapping endometrial cancer', 'filter': '{"condition": ["Endometrial Cancer", "Endometrial Neoplasms", "Uterine Neoplasms"], "intervention": ["Sentinel Lymph Node Biopsy", "Sentinel Lymph Node Mapping"], "status": ["RECRUITING", "ACTIVE_NOT_RECRUITING", "COMPLETED", "TERMINATED"]}'}}] 
+
+ Tool and tool query in subquery : According to ESMO 2023 or NCCN 2024 guidelines, what is the preferred adjuvant treatment for stage IIIC1 endometrial cancer (pT1b pN1mi) with lymph node micro-metastasis identified only on sentinel node ultra-staging: systemic therapy, radiation therapy, or a combination? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'adjuvant therapy endometrial cancer stage IIIC lymph node micrometastasis', 'filter': '{"include": ["Endometrial Carcinoma"]}'}}] 
+
+ Tool and tool query in subquery : For stage IIIC1 endometrial cancer with micro-metastasis in pelvic sentinel nodes, do current NCCN or ESMO guidelines recommend pelvic EBRT alone, or pelvic EBRT with a vaginal brachytherapy boost? : 
+
+ [] 
+
+ Tool and tool query in subquery : In MMR proficient (MMRp) / p53 wild-type, stage III endometrioid endometrial cancer, do the 2024 ESMO or NCCN guidelines recommend any specific adjuvant therapy modifications (e.g., omission of chemotherapy, dose adjustment) compared to patients with other molecular subtypes? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer stage III adjuvant therapy molecular subtype', 'filter': 'conditions:Endometrial Cancer|interventions:Chemotherapy|study_type:Interventional', 'post_filter': 'max_age: 100'}}] 
+
+ Tool and tool query in subquery : What is the NCCN and ESMO recommended follow-up schedule (visit frequency, tumor markers, imaging) for stage III endometrial cancer in the first 5 years post-treatment, and has this been updated in 2024-2025? : 
+
+ [] 
+
+ Final Answer : 
+
+ ## Audit Findings (So Far)
+
+- **Decision Point 1**: Post-operative request to pathology to clarify the type of metastasis (isolated tumor cells, micro-, or macro-metastasis) in the sentinel lymph nodes.
+  - **Guideline Alignment**: Unverifiable.
+  - **Evidence Source**: No evidence was retrieved regarding the clinical significance or standard workup of sentinel lymph node metastasis sub-classifications in endometrial cancer [^^1].
+  - **Evidence Level**: Not Applicable (No supporting evidence found).
+
+- **Decision Point 2**: Recommendation for adjuvant therapy with "TC chemotherapy + EBRT ± VB" (Taxane/Platinum chemotherapy + External Beam Radiotherapy ± Vaginal Brachytherapy) for Stage IIIC1 (FIGO 2009) endometrioid carcinoma.
+  - **Guideline Alignment**: Partial.
+  - **Evidence Source**: The retrieved evidence [^^1] describes a Phase II trial for high-risk endometrial cancer using a sequence of vaginal cuff brachytherapy followed by carboplatin and dose-dense paclitaxel chemotherapy. This supports the combination of chemotherapy and radiation (specifically vaginal brachytherapy) but does not directly validate the proposed "TC + EBRT ± VB" regimen. The trial did not specify the inclusion of external beam radiotherapy (EBRT) nor the standard 3-week TC regimen.
+  - **Evidence Level**: Low (Single-arm Phase II trial data only).
+
+- **Decision Point 3**: Recommended post-treatment surveillance schedule and tests (frequency, physical exam, tumor markers CA125, HE4, CA199, and imaging as indicated).
+  - **Guideline Alignment**: Unverifiable.
+  - **Evidence Source**: No evidence was retrieved regarding specific follow-up protocols for endometrial cancer [^^1].
+  - **Evidence Level**: Not Applicable (No supporting evidence found).
+
+## Verification Gaps
+1.  **Lymph Node Metastasis Classification**: No evidence was found to confirm the necessity or standard practice of sub-classifying sentinel node metastases (isolated cells vs. micro- vs. macro-metastasis) and how this influences adjuvant therapy decisions.
+2.  **Standard Adjuvant Therapy for Stage IIIC1**: The specific recommendation for combining EBRT with chemotherapy (and the optional use of vaginal brachytherapy) for Stage IIIC1 endometrioid carcinoma is not directly supported by the retrieved evidence. High-level evidence (e.g., randomized controlled trials or comprehensive guidelines) for this specific stage and histology is missing.
+3.  **Survival/Efficacy Data**: The retrieved trial [^^1] focused on feasibility; no efficacy or survival outcome data from this or other high-level studies are available to validate the proposed treatment plan's expected benefit.
+4.  **Follow-up Protocol**: No evidence supports the specific frequency, duration, or component tests (including the utility of HE4 and CA199) of the proposed surveillance plan.
+
+## Strategy for Next Step
+To adequately audit this treatment plan, the following targeted searches are required:
+1.  Search for **current clinical practice guidelines** (e.g., NCCN, ESGO/ESTRO/ESP) for the management of stage III endometrial cancer, focusing on adjuvant therapy recommendations based on nodal metastasis burden.
+2.  Search for **randomized controlled trials** evaluating adjuvant chemotherapy with or without radiotherapy (EBRT and/or brachytherapy) in patients with stage III endometrioid endometrial cancer.
+3.  Search for **systematic reviews or meta-analyses** on sentinel lymph node ultrastaging in endometrial cancer and its prognostic/therapeutic impact.
+4.  Search for **guidelines or high-quality studies** on surveillance strategies for endometrial cancer after primary treatment.
+
+## References
+[^^1] https://clinicaltrials.gov/ct2/show/NCT03189446 — Phase II Trial of Vaginal Cuff Brachytherapy Followed by Adjuvant Chemotherapy With Carboplatin and Dose Dense Paclitaxel in Patients With High-Risk Endometrial Cancer
+
+ 
+User Qeury : Seek evidence-based support for this plan 
+Iteration : 0 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and ESMO recommendation level for adjuvant carboplatin/paclitaxel (TC) chemotherapy combined with volume-directed external beam radiotherapy (EBRT) in FIGO 2009 stage III C1 endometrial cancer with sentinel lymph node isolated tumor cells (ITCs) or micrometastases? : 
+
+ [] 
+
+ Tool and tool query in subquery : According to the latest NCCN Guidelines (2025) and ESMO Clinical Practice Guidelines (2023/2024), is there a Category 1 or strong recommendation to add vaginal brachytherapy (VB) boost to chemotherapy and EBRT for stage III endometrioid carcinoma with nodal ITCs? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'stage III endometrioid carcinoma'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid carcinoma'}}] 
+
+ Tool and tool query in subquery : For pMMR (MLH1/PMS2, MSH2/MSH6 proficient) and p53 wild-type endometrial cancer (as in this case), do NCCN/ESMO guidelines favor TC chemotherapy alone or in combination with radiotherapy over immunotherapy (e.g., pembrolizumab/lenvatinib) in the adjuvant setting for stage III disease? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer', 'filter': {'other_terms': 'adjuvant stage III pMMR pembrolizumab lenvatinib chemotherapy radiotherapy', 'recruitment_status': 'all'}}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : What is the recommended surveillance visit frequency for stage III endometrial cancer in the first 3 years post-treatment according to current NCCN and ESMO guidelines? Is 'every 3-6 months for the first 2-3 years' supported? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : What is the evidence level (NCCN/ESMO) for the routine use of serum tumor markers CA125, HE4, and CA199 in the follow-up of asymptomatic endometrial cancer patients, specifically for stage III endometrioid histology? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'CA125 HE4 CA199 endometrial cancer surveillance', 'filter': 'CONDITION:endometrial cancer'}}] 
+
+ Tool and tool query in subquery : Do current NCCN or ESMO guidelines recommend routine cross-sectional imaging (CT/PET-CT) for surveillance in asymptomatic patients with stage III endometrial cancer, or only based on symptoms or rising tumor markers? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+
+- **Decision Point 1**: Postoperative diagnosis of Stage III C1 (FIGO 2009) endometrioid adenocarcinoma.
+  - **Guideline Alignment**: Consistent.
+  - **Evidence Source**: The retrieved evidence confirms that "stage III endometrioid carcinoma" is the disease of interest and that endometrioid adenocarcinoma is the most common variant. The staging appears consistent with the pathological findings described (deep myometrial invasion, lymph node involvement).
+  - **Evidence Level**: Insufficient to assign NCCN category (evidence provided is general disease description, not specific staging criteria).
+
+- **Decision Point 2**: Recommended adjuvant therapy: "TC方案化疗+EBRT±VB" (presumed: Taxane/Carboplatin chemotherapy + External Beam Radiotherapy ± Vaginal Brachytherapy).
+  - **Guideline Alignment**: Partial/Inconsistent.
+  - **Evidence Source**: The retrieved evidence lists **PACLITAXEL (CHEMBL428647)** as an approved drug associated with the disease, which aligns with the "T" in the TC regimen. However, the evidence provides no specific guideline recommendation for combining chemotherapy (especially carboplatin) and radiotherapy for stage III disease. The plan's recommendation cannot be verified against the provided evidence.
+  - **Evidence Level**: Insufficient to assign NCCN category. **WARNING**: The adjuvant therapy plan is not directly supported or refuted by the provided evidence, which lacks specific treatment guidelines.
+
+- **Decision Point 3**: Post-treatment surveillance plan (frequency and tests).
+  - **Guideline Alignment**: Cannot be verified.
+  - **Evidence Source**: The retrieved evidence provides no information on follow-up protocols for endometrial cancer.
+  - **Evidence Level**: No evidence available.
+
+## Verification Gaps
+1.  **Lack of Specific Treatment Guidelines:** The core deficiency is the absence of any referenced clinical practice guidelines (e.g., NCCN, ESMO, ESGO) that provide level-of-evidence recommendations for adjuvant therapy in Stage III endometrioid endometrial carcinoma, particularly for patients with lymph node micro-metastases or isolated tumor cells.
+2.  **Ambiguity in Adjuvant Therapy Rationale:** The plan recommends a combination of chemotherapy and radiotherapy. Specific evidence is needed to confirm if this is the standard of care for Stage IIIC1 disease and if the sequence (chemoradiation) is supported. The role of vaginal brachytherapy (VB) in this context is also unclear from the provided evidence.
+3.  **Unverified Follow-up Protocol:** The proposed surveillance schedule and the specific utility of tumor markers (CA125, HE4, CA199) in follow-up for endometrial cancer are not addressed in the retrieved evidence.
+
+## Strategy for Next Step
+To validate this treatment plan, the following specific evidence must be retrieved:
+1.  **Search for authoritative guidelines:** Priority search for the latest **NCCN Clinical Practice Guidelines in Oncology (NCCN Guidelines®) for Uterine Neoplasms** and/or **ESGO/ESTRO/ESP guidelines for the management of patients with endometrial carcinoma**. Focus on the sections for **Stage III disease** and **adjuvant therapy**.
+2.  **Search for evidence on combined modality therapy:** Look for clinical trials or meta-analyses supporting "chemoradiation" (e.g., TC chemotherapy + EBRT) versus chemotherapy alone or radiotherapy alone for Stage III endometrial cancer. Key trials may include **GOG-258** or analyses of **PORTEC-3**.
+3.  **Search for evidence on management of low-volume nodal disease:** Specifically investigate recommendations for patients with "isolated tumor cells" or "micro-metastases" in sentinel lymph nodes (pN1(mi) or similar), as this may alter therapy intensity.
+4.  **Search for follow-up guidelines:** Review the surveillance sections of the guidelines identified in step 1 to verify the proposed follow-up frequency and appropriate tests.
+
+## References
+*No sources were provided in the "Available SOURCES" list for citation.* The audit is based solely on the "Retrieved Evidence (Golden Standard)" text block provided by the user, which does not contain citable guideline documents. 
+Iteration : 1 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence and recommendation for adjuvant therapy in FIGO 2018 Stage IIIC1 endometrial cancer with sentinel lymph node micrometastasis or isolated tumor cells? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer adjuvant therapy stage IIIC1 sentinel lymph node micrometastasis', 'filter': '{"advancedFilters": [{"category": "Status", "operator": "any", "selections": ["Active, not recruiting", "Completed"]}]}'}}] 
+
+ Tool and tool query in subquery : According to the latest ESMO or NCCN guidelines, is there Category 1 evidence supporting the use of concurrent or sequential carboplatin/paclitaxel chemotherapy AND external beam pelvic radiotherapy for Stage III endometrioid carcinoma with nodal metastasis? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid carcinoma'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer carboplatin paclitaxel radiotherapy phase 3', 'filter': 'phase:Phase 3', 'post_filter': 'condition:Endometrial Cancer'}}] 
+
+ Tool and tool query in subquery : Does the NCCN guidelines recommend adding vaginal brachytherapy boost to external beam radiotherapy for Stage III endometrial cancer with nodal involvement, and what is the evidence level? : 
+
+ [] 
+
+ Tool and tool query in subquery : What is the NCCN or ESMO recommended follow-up schedule and tests for Stage III endometrial cancer? Is routine surveillance with HE4 and CA199 supported by Category 2A or higher evidence? : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer surveillance follow-up', 'condition': 'endometrial cancer', 'post_filter': 'phase:Phase 2/Phase 3/Phase 4'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'HE4 CA199 endometrial cancer', 'condition': 'endometrial cancer', 'post_filter': 'phase:Phase 2/Phase 3/Phase 4'}}] 
+User Qeury : Seek evidence-based support for this plan 
+Iteration : 0 
+
+ Tool and tool query in subquery : NCCN Guidelines Endometrial Cancer 2025 (or latest) adjuvant therapy Category of Evidence for concurrent chemoradiation followed by chemotherapy for Stage III disease with nodal involvement (FIGO 2023). : 
+
+ [{'tool_name': 'get_general_info_by_disease_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : ESMO Clinical Practice Guidelines 2024 endometrial cancer management: recommended adjuvant treatment for stage IIIC1 with sentinel lymph node micrometastasis (ITCs or micro-metastasis). : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': ''}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer stage IIIC1 sentinel lymph node adjuvant', 'filter': '{"overallStatus": ["Active, not recruiting", "Completed", "Recruiting"]}'}}] 
+
+ Tool and tool query in subquery : NCCN Guidelines update 2025 vs 2024: changes in recommendations for systemic therapy in stage III endometrial cancer, specifically for MMR proficient (pMMR) tumors. : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'stage III endometrial cancer systemic therapy', 'filter': 'advanced'}}] 
+
+ Tool and tool query in subquery : Keynote-775 trial subgroup analysis: efficacy of lenvatinib+pembrolizumab in pMMR advanced endometrial cancer and its relevance for adjuvant setting in stage III. : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'Keynote-775 lenvatinib pembrolizumab endometrial', 'filter': 'phase:phase 3 AND study_type:interventional AND status:completed'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : NCCN/ESMO guidelines recommendation for use of tumor markers CA125 and HE4 in surveillance/follow-up for stage I-III endometrial cancer post-treatment. : 
+
+ [] 
+
+ Tool and tool query in subquery : PORTEC-3 trial long-term results and current guideline integration: role of adjuvant chemoradiation vs radiation alone in high-risk and stage III endometrial cancer. : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'PORTEC-3 endometrial cancer adjuvant chemoradiation', 'filter': {'intervention': ['Radiation', 'Drug']}, 'post_filter': {'sort': 'desc(completion_date)', 'limit': 5}}}] 
+
+ Critc : 
+
+ ## Audit Findings (So Far)
+
+**Important Note:** The "Retrieved Evidence" provided is a general overview of endometrial cancer and lists associated genes and some approved drugs. It explicitly states: *"A search for clinical studies specifically related to this plan returned no results."* Furthermore, the "Available SOURCES" list is empty. Therefore, the verification below is based on comparing the plan against the *limited* provided evidence. No specific guideline recommendations (e.g., from NCCN, ESMO) or clinical trial data are available for direct comparison or to assign evidence levels.
+
+- **Decision Point 1: Post-Surgical Diagnosis (Stage III C1 / T1bN1(sn)M0)**
+    - **Guideline Alignment**: Partial (Basic concepts consistent, specific staging criteria unverified).
+    - **Evidence Source**: The retrieved evidence confirms endometrial cancer and its variants, and mentions genes like **MSH2** and **MSH6** which are relevant for hereditary syndromes [Lynch Syndrome mentioned in overview]. The plan's immunohistochemistry shows intact MMR proteins (MLH1+, MSH2+, MSH6+, PMS2+), which is a critical piece of prognostic and therapeutic information. The provided evidence does not contain FIGO staging criteria or definitions for nodal micro-metastasis (sn).
+    - **Evidence Level**: Cannot be assigned. No guideline sources are provided.
+
+- **Decision Point 2: Post-Operative Management - Pathologic Review & Systemic Therapy**
+    - **Guideline Alignment**: Cannot be Verified.
+    - **Evidence Source**: The plan's step 1 ("联系病理科明确孤立细胞转移、微转移或宏转移") is a prudent clinical step, but the retrieved evidence offers no guidance on the significance or management of isolated tumor cells/micro-metastases in sentinel lymph nodes. The recommended "TC方案化疗+EBRT±VB" (presumably Taxane/Carboplatin chemotherapy + External Beam Radiotherapy ± Vaginal Brachytherapy) is a common adjuvant approach for high-intermediate risk and stage III disease. However, the retrieved evidence does not mention this regimen or provide any comparative study results to support it. The listed drug **Filgrastim** is a supportive care agent relevant to chemotherapy but does not validate the chemotherapy choice itself.
+    - **Evidence Level**: Cannot be assigned. No guideline or trial data sources are provided.
+
+- **Decision Point 3: Post-Operative Management - Follow-up Schedule and Content**
+    - **Guideline Alignment**: Cannot be Verified.
+    - **Evidence Source**: The proposed follow-up schedule (every 3-6 months for 2-3 years, then every 6 months to year 5, then annually) and components (exam, tumor markers CA125, HE4, CA199, imaging as needed) represent a common surveillance strategy. The retrieved evidence contains no information on recommended follow-up protocols for endometrial cancer.
+    - **Evidence Level**: Cannot be assigned. No guideline sources are provided.
+
+## Verification Gaps
+1.  **Lack of Specific Guideline Recommendations:** The core gap is the absence of any cited clinical practice guidelines (e.g., NCCN, ESMO, FIGO) or major clinical trial results (e.g., GOG-258, PORTEC-3) that define the standard-of-care adjuvant therapy for Stage III C1 endometrial cancer.
+2.  **Management of Sentinel Node Micro-Metastasis:** There is no evidence provided on how to stratify treatment based on the extent of nodal involvement (isolated tumor cells vs. micro-metastasis vs. macro-metastasis), which is critical for this case.
+3.  **Support for Combined Modality Therapy:** There is no evidence to confirm that concurrent or sequential chemotherapy (TC) and radiotherapy (EBRT±VB) is the recommended approach for this stage and risk profile.
+4.  **Standardized Follow-up Protocol:** No evidence is provided to confirm the optimal frequency, duration, and components of follow-up for Stage III disease.
+
+## Strategy for Next Step
+To properly audit this treatment plan, the following specific evidence must be retrieved:
+1.  **Search for Clinical Guidelines:** Prioritize finding the latest **NCCN Clinical Practice Guidelines in Oncology (NCCN Guidelines®) for Uterine Neoplasms** or **ESMO Clinical Practice Guidelines for Endometrial Cancer**. These will provide category-based recommendations for adjuvant therapy in Stage III disease.
+2.  **Search for Stage-Specific Trials:** Search for publications from key trials addressing adjuvant therapy in Stage III endometrial carcinoma, such as **GOG-258** (chemoradiation vs. chemotherapy alone) and **PORTEC-3** (chemoradiation vs. radiotherapy alone).
+3.  **Search for Sentinel Node Data:** Search for studies or consensus statements on the clinical significance and management of **low-volume sentinel lymph node metastasis** (isolated tumor cells, micro-metastasis) in endometrial cancer.
+4.  **Search for Follow-up Guidelines:** Locate sections within the above guidelines or dedicated society statements on **surveillance after treatment for endometrial cancer**.
+
+## References
+*[No citable sources were provided in the "Available SOURCES" list. The "Retrieved Evidence" block contained general information but no specific, attributable guideline documents or trial publications that can be cited using the required format.]* 
+Iteration : 1 
+
+ Tool and tool query in subquery : In NCCN Guidelines for Endometrial Carcinoma, what is the specific adjuvant therapy recommendation (Category of Evidence) for Stage III disease with nodal involvement limited to isolated tumor cells (ITCs) or micrometastasis in sentinel lymph nodes? : 
+
+ [] 
+
+ Tool and tool query in subquery : According to ESMO Clinical Practice Guidelines, what is the recommended regimen and sequence (chemotherapy first vs. radiotherapy first) for adjuvant therapy in Stage III endometrioid endometrial carcinoma with nodal involvement? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid endometrial carcinoma'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': 'EFO_ID_PLACEHOLDER'}}] 
+
+ Tool and tool query in subquery : Based on the 2023/2024 Molecular Risk Stratification in endometrial cancer (e.g., ESMO or NCCN), is testing for POLE mutation still required for definitive risk classification in a patient already known to have p53 wild-type and mismatch repair proficient (MMRp) status? What is the evidence level for this recommendation? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}, {'tool_name': 'get_gene_metadata_by_gene_name', 'tool_input': {'gene_name': 'POLE'}}, {'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer molecular risk stratification POLE mutation', 'limit': 50}}] 
+
+ Tool and tool query in subquery : Does the NCCN Guidelines specify the addition of vaginal brachytherapy (VB) boost to pelvic external beam radiation therapy (EBRT) for Stage III endometrial cancer patients? If so, what is the Category of Evidence and supporting rationale? : 
+
+ [] 
+
+ Tool and tool query in subquery : What is the NCCN Category of Evidence for the routine use of serum tumor markers (specifically CA125, HE4, and CA199) in surveillance follow-up for Stage III endometrial cancer patients with no evidence of disease? : 
+
+ [{'tool_name': 'get_studies', 'tool_input': {'query': 'endometrial cancer surveillance tumor markers CA125 HE4 CA199', 'filter': '{"condition": "endometrial cancer", "intervention": "CA125|HE4|CA199"}'}}, {'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrial cancer'}}] 
+
+ Tool and tool query in subquery : For a patient with endometrioid carcinoma and positive sentinel lymph nodes on ultrastaging, what is the NCCN recommendation regarding completion of lymphadenectomy (pelvic +/- para-aortic)? What is the Category of Evidence for this recommendation? : 
+
+ [{'tool_name': 'get_disease_id_description_by_name', 'tool_input': {'name': 'endometrioid carcinoma'}}, {'tool_name': 'get_publications_by_disease_efoId', 'tool_input': {'entityId': ''}}] 
+
+ Final Answer : 
+
+ ## Audit Findings (So Far)
+
+- **Decision Point 1**: Contact Pathology to clarify the classification of lymph node metastasis (isolated tumor cells vs. micro-metastasis vs. macro-metastasis).
+- **Guideline Alignment**: Partial. The need to accurately stage based on lymph node involvement is a fundamental oncologic principle and directly impacts treatment decisions for Stage III disease. However, the retrieved evidence provides no specific criteria or guidance on how to classify or manage these different categories of nodal involvement in endometrial cancer.
+- **Evidence Source**: General staging principles are implied but not specified in the retrieved evidence.
+- **Evidence Level**: Insufficient evidence in provided sources to grade.
+
+- **Decision Point 2**: Recommended adjuvant therapy: "TC方案化疗+EBRT±VB" (presumed: Paclitaxel + Carboplatin chemotherapy + External Beam Radiation Therapy ± Vaginal Brachytherapy).
+- **Guideline Alignment**: **Inconsistent / Unable to Verify**. While adjuvant therapy is indicated for Stage III disease, the retrieved evidence contains **no data** on specific chemotherapy regimens (like TC), radiation therapy (EBRT), or brachytherapy (VB) for endometrial cancer. The plan proposes a combined modality approach (chemoradiation) which is a standard consideration for high-risk disease, but this cannot be verified against the provided evidence.
+- **Evidence Source**: None.
+- **Evidence Level**: No supporting evidence found in provided sources.
+
+- **Decision Point 3**: Post-treatment surveillance schedule and tests (clinical exam, CA125, HE4, CA199, imaging as needed).
+- **Guideline Alignment**: Partial. The concept of structured follow-up after cancer treatment is standard. However, the retrieved evidence provides **no specific recommendations** for the frequency of visits, the duration of intensive surveillance, or the specific tumor markers (CA125, HE4, CA199) to use in endometrial cancer follow-up.
+- **Evidence Source**: None.
+- **Evidence Level**: Insufficient evidence in provided sources to grade.
+
+## Verification Gaps
+The retrieved evidence is entirely insufficient to validate this treatment plan. Critical gaps include:
+1.  **Lack of Treatment Guidelines:** No data on adjuvant therapy (chemotherapy, radiation, sequencing) for Stage III (IIIC1) endometrial cancer.
+2.  **Lack of Staging Specifics:** No guidance on the clinical significance or management implications of isolated tumor cells vs. micro-metastasis in sentinel lymph nodes.
+3.  **Lack of Follow-up Protocols:** No standard recommendations for surveillance intervals or appropriate tests in endometrial cancer.
+4.  **Contextual Information:** The patient's tumor is MMR proficient (MLH1+, MSH2+, MSH6+, PMS2+) and p53 wild-type, which is relevant for prognosis and potential targeted therapies, but the evidence lacks therapeutic implications for these biomarkers.
+
+## Strategy for Next Step
+To properly audit this plan, the following specific evidence must be retrieved:
+1.  **Search for authoritative guidelines:** "NCCN Guidelines Uterine Neoplasms" or "ESGO/ESTRO/ESP endometrial cancer guidelines" focusing on the management of **Stage III endometrial cancer** and **adjuvant therapy**.
+2.  **Search for sentinel node classification:** "Sentinel lymph node ultra-staging endometrial cancer isolated tumor cells management" or "FIGO classification isolated tumor cells lymph node".
+3.  **Search for surveillance evidence:** "Endometrial cancer surveillance follow-up schedule" and "tumor markers CA125 HE4 follow-up endometrial cancer".
+4.  **Search for targeted therapy context:** "MMR proficient p53 wild-type endometrial cancer treatment" to see if the proposed TC+EBRT is the standard of care for this molecular profile.
+
+## References
+*Note: The provided "Retrieved Evidence" did not include numbered sources with distinct URLs or titles. As per the instructions, when specific sources are provided in the "Available SOURCES" section, they should be cited with numbered brackets [^^n]. Since no such numbered list was provided in this interaction, references are not cited in the format above. The audit is based solely on the textual "Retrieved Evidence" block provided in the prompt.* 
