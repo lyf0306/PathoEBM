@@ -2,45 +2,57 @@ import json
 from typing import List
 import os
 import pickle as pkl
-import asyncio
 import numpy as np
 from tqdm import tqdm
 from sklearn.metrics.pairwise import cosine_similarity
 from .utils import extract_and_convert_dict, exact_match_entity_type
 
-# === 新增：引入本地模型库 ===
-import torch
-from sentence_transformers import SentenceTransformer
+# === 新增：引入 OpenAI 官方客户端（用于兼容各厂商的本地 Embedding API 服务） ===
+from openai import OpenAI
 
-class LocalQwenEmbedding:
-    # 你的本地模型路径
-    MODEL_PATH = "/root/Qwen3-Embedding-4B"
-    
-    def __init__(self):
-        print(f"🔄 [Embedding] Loading Local Model: {self.MODEL_PATH}")
+class APIQwenEmbedding:
+    """
+    通过 HTTP API 调用 Embedding 服务，彻底解耦本地显卡与 torch 依赖。
+    你可以使用 vLLM、Xinference 或沐曦官方支持的推理框架在 8002 端口启动模型。
+    """
+    def __init__(self, base_url="http://localhost:8002/v1", api_key="EMPTY", model_name="QwenEmbedding"):
+        print(f"🔄 [Embedding] Connecting to API: {base_url}")
         try:
-            self.model = SentenceTransformer(
-                self.MODEL_PATH, 
-                trust_remote_code=True, 
-                device="cuda:1" if torch.cuda.is_available() else "cpu"
-            )
-            print("✅ [Embedding] Model loaded successfully.")
+            # 初始化同步 HTTP 客户端
+            self.client = OpenAI(base_url=base_url, api_key=api_key)
+            self.model_name = model_name
+            print("✅ [Embedding] API Client initialized successfully.")
         except Exception as e:
-            print(f"❌ [Embedding] Error loading model: {e}")
-            self.model = None
+            print(f"❌ [Embedding] Error initializing API client: {e}")
+            self.client = None
     
-    def embed_query(self, query: str):
-        if self.model is None:
+    def embed_query(self, query: str) -> np.ndarray:
+        if self.client is None:
             return np.zeros(2560)
-        # normalize_embeddings=True 对余弦相似度检索至关重要
-        embedding = self.model.encode(query, normalize_embeddings=True)
-        return embedding # SentenceTransformer 返回的是 numpy array
+        try:
+            response = self.client.embeddings.create(
+                model=self.model_name,
+                input=query
+            )
+            # OpenAI API 返回的通常已经是 normalize 过的向量
+            return np.array(response.data[0].embedding)
+        except Exception as e:
+            print(f"❌ [Embedding] Error fetching embedding for query: {e}")
+            return np.zeros(2560)
     
-    def embed_documents(self, query_list: List[str]):
-        if self.model is None:
+    def embed_documents(self, query_list: List[str]) -> List[np.ndarray]:
+        if self.client is None or not query_list:
             return [np.zeros(2560) for _ in query_list]
-        embedding_list = self.model.encode(query_list, normalize_embeddings=True)
-        return embedding_list
+        try:
+            response = self.client.embeddings.create(
+                model=self.model_name,
+                input=query_list
+            )
+            return [np.array(data.embedding) for data in response.data]
+        except Exception as e:
+            print(f"❌ [Embedding] Error fetching embedding for documents: {e}")
+            return [np.zeros(2560) for _ in query_list]
+
 
 class ToolEmbeddingRetriever:
     
@@ -49,9 +61,12 @@ class ToolEmbeddingRetriever:
         self.mcp_tool_client = mcp_tool_client
         self.mcp_tool_map = mcp_tool_client.mcp_tool_map
         
-        # === 修改：使用本地模型替代 API ===
-        # 原来的 embedding_api_key 在这里会被忽略
-        self.embedding_model = LocalQwenEmbedding()
+        # === 修改：使用 API 客户端替代本地本地大模型加载 ===
+        # 这里你可以将 base_url 放到 config 中统一管理，目前默认指向 8002 端口
+        self.embedding_model = APIQwenEmbedding(
+            base_url="http://localhost:8002/v1", 
+            api_key=embedding_api_key if embedding_api_key else "EMPTY"
+        )
         
         self._load_tool_embedding_cache(embedding_cache)
         self.tool_name_list = list(mcp_tool_client.mcp_tool_map.keys())
@@ -77,8 +92,6 @@ class ToolEmbeddingRetriever:
                     
                 # 兼容性处理：如果 pkl 是新的格式 (dict 包含 'tool_embeddings') 或旧格式 (直接是 dict)
                 if isinstance(data, dict) and "tool_embeddings" in data and "tool_names" in data:
-                    # 这是我们用脚本生成的 tool_desc_embedding.pkl 新格式
-                    # 需要将其转换回 {tool_name: embedding} 的字典格式供 Retriever 使用
                     self.tool_embedding_cache = {}
                     names = data["tool_names"]
                     embeddings = data["tool_embeddings"]
@@ -86,7 +99,6 @@ class ToolEmbeddingRetriever:
                         self.tool_embedding_cache[name] = emb
                     print(f"✅ Loaded {len(self.tool_embedding_cache)} tools from new PKL format.")
                 else:
-                    # 旧格式
                     self.tool_embedding_cache = data
                     print(f"✅ Loaded {len(self.tool_embedding_cache)} tools from legacy PKL format.")
                     
@@ -98,17 +110,14 @@ class ToolEmbeddingRetriever:
             
         cached_embedding_num = len(self.tool_embedding_cache)
         
-        # Check if mcp_tool_map is initialized
         if not hasattr(self, 'mcp_tool_map'):
             print("Warning: mcp_tool_map not initialized yet")
             return
             
-        # 如果缓存缺失，尝试补充 (但通常我们已经手动重构了 pkl)
         for tool_name, tool in tqdm(self.mcp_tool_map.items()):
             if tool_name in self.tool_embedding_cache:
                 continue
                 
-            # Check if tool has description
             if not hasattr(tool, 'description'):
                 print(f"Warning: tool {tool_name} has no description")
                 continue
@@ -116,13 +125,12 @@ class ToolEmbeddingRetriever:
             tool_func_desc = tool.description.split('Args')[0]
             embedding = self.embedding_model.embed_query(tool_func_desc)
             
-            # Only cache if embedding was successful
-            if embedding is not None:
+            # Check if embedding is valid (not a zero vector fallback)
+            if embedding is not None and np.any(embedding):
                 self.tool_embedding_cache[tool_name] = embedding
             else:
-                print(f"Warning: Failed to generate embedding for {tool_name}")
+                print(f"Warning: Failed to generate valid embedding for {tool_name}")
         
-        # Save cache if new embeddings were added
         if len(self.tool_embedding_cache) > cached_embedding_num:
             try:
                 if not os.path.exists(os.path.dirname(embedding_cache_path)):
@@ -134,18 +142,12 @@ class ToolEmbeddingRetriever:
                 print(f"Error saving embedding cache: {e}")
     
     def retrieve_tools(self, query: str, top_k: int = 5, explain_item: bool = False):
-        """
-        Simple RAG. Retrieve the most relevant tools for a given query using embedding similarity.
-        """
-        # Get query embedding
         if explain_item:
             query = self.explain_item(query)
             
         query_embedding = self.embedding_model.embed_query(query)
-        # Ensure 2D array
         query_embedding = np.array(query_embedding).reshape(1, -1)
         
-        # Check for NaN values
         if np.isnan(query_embedding).any() or (len(self.all_tool_embedding) > 0 and np.isnan(self.all_tool_embedding).any()):
             print("Warning: Embedding contains NaN.")
             return [], []
@@ -153,14 +155,11 @@ class ToolEmbeddingRetriever:
         if len(self.all_tool_embedding) == 0:
             return [], []
 
-        # Calculate cosine similarity scores
         similarities = cosine_similarity(query_embedding, self.all_tool_embedding)[0]
         _tools = list(zip(self.tool_name_list, similarities))
             
-        # Sort tools by similarity score and get top k
         sorted_tools = sorted(_tools, key=lambda x: x[1], reverse=True)
         
-        # Safe slicing
         k = min(top_k, len(sorted_tools))
         if k == 0:
             return [], []
@@ -212,11 +211,9 @@ class ToolEmbeddingRetriever:
         if explain_item:
             query = self.explain_item(query)
         
-        # Get query embedding
         query_embedding = self.embedding_model.embed_query(query)
         query_embedding = np.array(query_embedding).reshape(1, -1)
         
-        # Calculate cosine similarity scores
         tool_embeddings = []
         available_tools = []
         for tool_name in candidate_tools:
@@ -229,7 +226,6 @@ class ToolEmbeddingRetriever:
         
         tool_embeddings = np.array(tool_embeddings)
         
-        # Check for NaN values
         if np.isnan(query_embedding).any() or np.isnan(tool_embeddings).any():
             print("Warning: Embedding contains NaN.")
             return [], []
@@ -237,7 +233,6 @@ class ToolEmbeddingRetriever:
         similarities = cosine_similarity(query_embedding, tool_embeddings)[0]
         _tools = list(zip(available_tools, similarities))
         
-        # Sort tools by similarity score and get top k
         sorted_tools = sorted(_tools, key=lambda x: x[1], reverse=True)
         
         k = min(top_k, len(sorted_tools))
