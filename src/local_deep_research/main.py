@@ -68,28 +68,27 @@ async def extract_structured_task(raw_text: str, fast_llm) -> dict:
     """
     无损结构化翻译官：仅负责将 Markdown 报告拆解为 JSON 字段，保留所有医学细节。
     """
-    print("🤖 [Parser] Converting clinical text to structured JSON format without losing details...")
+    print(" [Parser] Converting clinical text to structured JSON format without losing details...")
     prompt = f"""
-    请阅读以下临床辅助决策系统生成的完整治疗方案。
-    你的任务仅仅是将非结构化的文本**原汁原味、无损地**转换为结构化的 JSON 格式，不要遗漏任何病理特征、分期或用药剂量。
+    请阅读以下临床辅助决策系统生成的初步治疗方案。
+    你的任务是将非结构化的文本**无损地**转换为结构化的 JSON 格式，绝对不能破坏原方案中的“主次路径”逻辑关系，不要遗漏任何病理特征、用药剂量或被排除的方案。
     
     【完整临床报告】：
     {raw_text[:4000]}  
     
     【输出 JSON 格式要求】：
     {{
-      "patient_profile": "提取文中提到的所有患者特征（如年龄、绝经史、分期、病理类型、分子分型、合并症等），找不到写'未提及'",
-      "proposed_interventions": [
-        "提取方案1：如 化疗 - 紫杉醇+卡铂...",
-        "提取方案2：如 放疗 - 盆腔外照射...",
-        "提取方案3：如 随访计划 - 前2-3年每3-6个月随访一次...",
-        "提取方案4：如 观察等待/无辅助治疗 - 针对早期低危患者的常规策略...",
-        "提取方案5：如 生活方式与合并症管理 - 减重、控制血糖血压等..."
+      "patient_profile": "提取文中提到的所有患者特征（如年龄、分期、病理类型、高危因素等）",
+      "primary_pathway": "提取 NCCN/ESGO 推荐的主路径公式（例如：全身系统性治疗 ± 盆腔外照射 ± 阴道近距离放疗，或 随访观察）",
+      "pathway_details": [
+        "提取主路径下的具体细节 1：如 化疗的具体药物与周期...",
+        "提取主路径下的具体细节 2：如 放疗的靶区与剂量...",
+        "提取主路径下的具体细节 3：如 随访计划..."
       ],
-      "clinical_uncertainties": "提取文中表述含糊、存在争议或明确指出需要进一步确认的地方（如果有的话）"
+      "alternatives_and_exclusions": [
+        "提取文中明确提到的备选方案，或者因为条件不符被明确排除/暂不推荐的方案（如：内分泌治疗暂不推荐）"
+      ]
     }}
-    
-    🛑 注意：对于早期低危患者，【观察等待】、【定期随访】以及【合并症管理】同样是非常重要且必须提取的临床干预措施（Interventions）！绝不允许在此类患者中输出空的 proposed_interventions 列表！
     
     请只输出合法的 JSON 字符串，不要包含任何 Markdown 代码块包裹(如 ```json)。
     """
