@@ -45,7 +45,7 @@ def read_context_from_file(file_path: str) -> str:
 
 def parse_graph_ec_report(raw_text: str):
     """
-    分离 graph-ec 的正文和参考文献，并用正则安全提取最大文献序号
+    分离 PathoRAG 生成的正文和参考文献，并用正则安全提取最大文献序号
     """
     separator = "==================== 参考文献 (References) ===================="
     max_index = 0
@@ -66,91 +66,81 @@ def parse_graph_ec_report(raw_text: str):
 
 async def extract_structured_task(raw_text: str, fast_llm) -> dict:
     """
-    无损结构化翻译官：仅负责将 Markdown 报告拆解为 JSON 字段，保留所有医学细节。
+    无损结构化翻译官：负责将 PathoRAG 传来的【初步治疗方案 + 患者全息数据】完美拆解。
+    新增核心逻辑：对并发症进行“预后级”与“次要偶发级”的分流。
     """
-    print(" [Parser] Converting clinical text to structured JSON format without losing details...")
+    print(" [Parser] Extracting patient profile, proposed plan, and stratifying comorbidities...")
     prompt = f"""
-你是一个极其严格的、毫无感情的【医疗病历结构化信息提取器】。你的唯一任务是从长篇且无序的中文临床病历中，精准地“复印”和“归纳”事实，填入预设的 JSON 格式中。
+你是一个极其严格且具备顶尖临床思维的【医疗数据结构化专家】。
+你的任务是从 PathoRAG 传出的前置报告（包含患者原始特征和初始 MDT 方案）中，无损提取所有关键信息。
 
 =========================================
-【👇需要你提取的患者原始病历数据👇】
+【👇需要你提取的病历与初始方案数据👇】
 {raw_text}
 =========================================
 
-🚨 【致命红线（绝对禁止违反）】：
-1. **【禁止医学推理】**：你不是医生！严禁根据前期症状推断分期，严禁根据分期自行判定高低危，严禁擅自将原方案篡改为“观察”。原病历写了化疗几次，就是几次！
-2. **【精准分期识别】**：必须一字不差地复制术后诊断中的罗马数字分期（如 IIIA1、IIIC、IVB），包含年份（如 FIGO 2023）。绝对禁止视线跳跃导致漏看（如把 IIIA1 错看成 IA1）。
-3. **【寻址提取法则】**：
-   - 找合并症：必须去【既往史】和【辅助检查】段落里找。
-   - 找主方案：必须直接去病历文末寻找【术后处理】、【诊疗计划】、【MDT建议】段落，严格摘录原话。
+🚨 【核心分类与提取红线】：
+1. **肿瘤核心数据（oncology_core）**：绝对无损地提取分期、病理、分子分型。
+2. **【极度重要】并发症分级（Comorbidity Stratification）**：
+   - **重大合并症 (major_comorbidities)**：必须提取对【肿瘤预后、化疗耐受性、靶向药物毒理】有重大影响的疾病（如：糖尿病、肥胖、高血压、冠心病/心血管疾病、肾衰竭、肝硬化、自身免疫病等）。
+   - **次要异常 (incidental_findings)**：提取局灶性、轻度且暂不影响全身肿瘤系统治疗的异常（如：浅表胃炎、轻度脂肪肝、肺部散在慢性炎症、主动脉壁钙化等）。
+3. **PICO深度问题**：准确提取原报告末尾留给 PathoEBM 深度查证的问题。
 
-【强制输出的 JSON 嵌套模板】（请严格按照此结构输出，不要遗漏任何层级，不要输出多余的非 JSON 文本）：
+【强制输出的 JSON 嵌套模板】（仅输出 JSON，不要有其他废话）：
 {{
-  "patient_profile": {{
-    "基本信息": "提取年龄、绝经状态、ECOG/KPS评分等。",
-    "术后诊断_照抄原文": [
-      "提取病历中【术后诊断】下的每一条内容，必须包含最完整的分期、病理类型、浸润深度、脉管癌栓等，形成数组形式原样照抄"
-    ],
-    "合并症与异常检查_归纳": {{
-      "既往史与合并症": "高度概括高血压、糖尿病、冠心病、手术史等。",
-      "重要辅助检查异常": "概括影像学或内镜发现的其他异常（如肺结节、胃炎、主动脉钙化、肝血管瘤等），这些对评估化疗毒性极其重要。"
-    }}
+  "oncology_core": {{
+    "basic_info": "年龄、绝经状态、体能评分等",
+    "diagnosis_and_stage": "完整的术后诊断及FIGO分期",
+    "pathology_and_molecular": "病理类型、浸润深度、淋巴结、LVSI、MMR、p53等标志物"
   }},
-  "primary_pathway": "严格摘录病历文末医生给出的【肿瘤专科治疗主方案】的原话（例如：TC方案化疗6次，序贯盆腔EBRT）。",
-  "pathway_details": {{
-    "肿瘤专科方案细节": [
-      "放化疗的具体周期数、剂量",
-      "治疗后的影像学复查计划（时间与项目）"
+  "comorbidities": {{
+    "major_comorbidities": [
+      "重大合并症1 (例如: 20年糖尿病史)",
+      "重大合并症2 (例如: 冠心病支架植入后)"
     ],
-    "多学科及合并症管理": [
-      "结合既往史，提取病历中提到的各科室随诊建议（如心内科、内分泌科随诊监测等）"
-    ],
-    "随访大纲": [
-      "提取病历中提到的随访频率、随访检查项目"
+    "incidental_findings": [
+      "次要异常1 (例如: 两肺底散在慢性炎症)",
+      "次要异常2 (例如: 胃窦糜烂HP感染)"
     ]
   }},
-  "alternatives_and_exclusions": [
-    "提取病历中提及的分子分型追踪（如等结果回报后调整）、特定病毒随访（如HPV+复查TCT）、或明确被排除的方案。若无则填无。"
+  "proposed_plan": {{
+    "main_oncology_treatment": "初步给出的肿瘤核心放化疗方案细节",
+    "follow_up_schedule": "随访计划"
+  }},
+  "clinical_questions_for_ebm": [
+    "提取报告末尾要求查证的具体PICO临床问题1",
+    "问题2"
   ]
 }}
-
-💡 提取要求：仔细阅读上方的【患者原始病历数据】，深呼吸，确保没有任何重要信息被遗漏后，直接输出 JSON。
 """
     try:
-        # 给翻译官也加上长超时时间，防止被强制中断
         response = await invoke_with_timeout_and_retry(fast_llm, prompt, timeout=1200.0)
         raw_resp = response.content
         
-        # ================== 🔥 新增：打印原始输出供 Debug ==================
-        print(f"\n{'='*20} 🔍 [Debug] 翻译官原始输出 {'='*20}")
-        print(raw_resp)
-        print(f"{'='*64}\n")
-        # =================================================================
-        
-        # 1. 剔除可能的 <think> 标签及其内部的思维链
+        # 剔除可能存在的思维链并精准截取 JSON
         cleaned_resp = re.sub(r"<think>.*?</think>", "", raw_resp, flags=re.DOTALL | re.IGNORECASE).strip()
-        
-        # 2. 🔥 终极无敌截取法：找到第一个 { 和最后一个 }
+        print(cleaned_resp)
         start_idx = cleaned_resp.find('{')
         end_idx = cleaned_resp.rfind('}')
         if start_idx != -1 and end_idx != -1 and end_idx >= start_idx:
             cleaned_resp = cleaned_resp[start_idx:end_idx+1]
         
-        # 解析 JSON (加上 strict=False 允许字符串内存在换行符)
         structured_data = json.loads(cleaned_resp, strict=False)
-        print("✅ [Parser] Extracted patient profile and interventions successfully.")
+        print("✅ [Parser] Structured data successfully extracted and stratified.")
         return structured_data
     except Exception as e:
         print(f"⚠️ [Parser] Parsing failed: {e}. Fallback to default structure.")
         return {
-            "patient_profile": "Extraction failed, rely on raw text.",
-            "proposed_interventions": ["Validate the proposed treatment plan"],
-            "clinical_uncertainties": "Check latest evidence"
+            "oncology_core": {"raw": "Extraction failed, rely on raw text."},
+            "comorbidities": {"major_comorbidities": [], "incidental_findings": []},
+            "proposed_plan": {"main": "Validate the proposed treatment plan"},
+            "clinical_questions_for_ebm": ["Check latest evidence for the given plan"]
         }
 
 async def run_evidence_update(treatment_context: str):
     """
-    执行单一任务：临床证据更新
+    执行核心循证更新。
+    路由策略：重大合并症送入Deep Search检索毒性与预后，次要异常直接生成转诊话术。
     """
     if check_local_model_health():
         print("🚀 Using Local vLLM Model (Free & Private).")
@@ -164,52 +154,53 @@ async def run_evidence_update(treatment_context: str):
         except: 
             fast_llm = get_local_model(temperature=0.1)
 
-    # 1. 纯代码切分文献，提取最大序号（这一步专为最后的完美排版拼接做准备）
+    # 1. 拆分图谱初步报告的主体与参考文献
     report_body, max_index, baseline_refs, separator = parse_graph_ec_report(treatment_context)
     print(f"✅ [Parser] Found {max_index} baseline references from graph-ec.")
 
-    # 2. LLM 提取无损结构化数据（传入全文 treatment_context，让大模型看到上下文！）
+    # 2. LLM 结构化拆解与合并症分级
     structured_task = await extract_structured_task(treatment_context, fast_llm)
-    
-    # 动态将 max_index 注入 task 中，传递给底层 ReferencePool
     structured_task["baseline_references"] = {"max_index": max_index}
+    
+    # 🚨 核心深搜 Payload 组装：
+    # 将 oncology_core 和 major_comorbidities 组装在一起交给 Deep Search
+    # 丢弃 incidental_findings 以防干扰主检索链路
+    search_payload = {
+        "oncology_profile": structured_task.get("oncology_core", {}),
+        "major_comorbidities_affecting_treatment": structured_task.get("comorbidities", {}).get("major_comorbidities", []),
+        "preliminary_plan": structured_task.get("proposed_plan", {}),
+        "specific_pico_questions": structured_task.get("clinical_questions_for_ebm", []),
+        "baseline_references": {"max_index": max_index}
+    }
     
     print(f"\n🔄 Clinical Evidence Update System Activated.")
     print(f"   Context Length: {len(report_body)} characters")
+    print(f"   Major Comorbidities to Analyze: {len(search_payload['major_comorbidities_affecting_treatment'])}")
     print("   Targeting Sources: PubMed (2024+), ClinicalTrials.gov\n")
 
-    # 🔥 核心修改：严格限制加载的工具列表，防止 Token 爆炸导致超时！
-    # 严格限制加载的工具列表，防止 Token 爆炸导致超时！
+    # 严格限制加载的工具列表，防止 Token 爆炸导致超时
     my_target_tools = [
-        # 1. 查最新医学论文 (NCBI/PubMed)
         "search_recent_pubmed",  
-        
-        # 2. 查最新临床试验 (ClinicalTrials.gov)
         "get_studies",           
-        
-        # 3. 查 FDA 权威数据：药物不良反应
         "get_adverse_reactions_by_drug_name", 
-        
-        # 4. 查 FDA 权威数据：药物警告与注意事项
         "get_warnings_and_cautions_by_drug_name" 
     ]
 
-    # 3. 初始化搜索系统
+    # 3. 初始化深搜系统
     system = AdvancedSearchSystem(
         max_iterations=settings.detailed.iteration, 
         questions_per_iteration=settings.detailed.questions_per_iteration,
         is_report=True,
         treatment_context=report_body, 
-        structured_task=structured_task,
+        structured_task=search_payload, # 👈 只喂给它肿瘤和重大合并症数据
         using_model=current_mode,
-        chosen_tools=my_target_tools  # <- 传入工具白名单
+        chosen_tools=my_target_tools
     )
 
     try:
         await system.initialize()
         
-        # 启动检索与合成的主流程
-        query = "Validate and optimize this clinical treatment plan using the latest evidence."
+        query = "Please validate the preliminary treatment plan, carefully assess the impact of major comorbidities (if any) on drug toxicity and overall survival, and answer the specific clinical questions provided."
         results = await system.analyze_topic(query)
         print(f"\n✅ Evidence synthesis task completed.")
         
@@ -220,7 +211,7 @@ async def run_evidence_update(treatment_context: str):
              
              final_resp_text = results['final_report']
              
-             # 4. 完美拼接：解析 search_system 吐出的终极报告和新文献
+             # 4. 完美拼接与【次要异常的拦截转诊】
              new_evidence_text = final_resp_text
              new_refs_text = ""
              split_marker = "=================================================="
@@ -230,13 +221,21 @@ async def run_evidence_update(treatment_context: str):
                  new_evidence_text = parts[0].strip()
                  new_refs_text = parts[1].strip()
              
-             # 将重写后的终极正文、旧文献列表、新文献列表按序无缝缝合
+             # 获取在前端被截留的次要异常，自动生成轻量级分诊模块
+             incidental_findings = structured_task.get("comorbidities", {}).get("incidental_findings", [])
+             referral_section = ""
+             if incidental_findings:
+                 referral_section = "\n### 其他非肿瘤异常及随访建议\n"
+                 for idx, item in enumerate(incidental_findings, 1):
+                     referral_section += f"{idx}. **关于[{item}]**：建议转诊至相应专科门诊进一步评估治疗方案。\n"
+             
+             # 将重写后的终极正文、次要并发症转诊、旧文献列表、新文献列表按序无缝缝合
              combined_report = f"### 🏥 循证校验与优化的最终治疗方案 (Deep EBM Synthesized Plan)\n\n" \
-                               f"{new_evidence_text}\n\n" \
+                               f"{new_evidence_text}\n" \
+                               f"{referral_section}\n" \
                                f"{separator}\n" \
                                f"{baseline_refs}\n"
              
-             # 如果找到了新文献才往后贴
              if new_refs_text:
                  combined_report += f"{new_refs_text}\n"
              
