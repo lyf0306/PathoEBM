@@ -47,6 +47,17 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
+GLOBAL_LLM_SEMAPHORE = None
+GLOBAL_API_SEMAPHORE = None
+
+def get_global_semaphores():
+    global GLOBAL_LLM_SEMAPHORE, GLOBAL_API_SEMAPHORE
+    if GLOBAL_LLM_SEMAPHORE is None:
+        GLOBAL_LLM_SEMAPHORE = asyncio.Semaphore(8)  # 你的显卡极限
+    if GLOBAL_API_SEMAPHORE is None:
+        GLOBAL_API_SEMAPHORE = asyncio.Semaphore(10)  # PubMed 的限流红线
+    return GLOBAL_LLM_SEMAPHORE, GLOBAL_API_SEMAPHORE
+
 
 def remove_think_tags(text: str) -> str:
     """Robustly remove <think> tags from model output."""
@@ -422,7 +433,7 @@ class AdvancedSearchSystem:
         """)
         
         followup_prompt = textwrap.dedent(f"""
-        你是一名经验丰富的妇科肿瘤个案管理专家。请根据【患者初步会诊草稿】和【最新查证的前沿循证数据】，撰写一份专业的子宫内膜癌术后随访方案。
+        你是一名经验丰富的妇科肿瘤个案管理专家。请结合【患者初步会诊草稿】中患者的真实合并症和【最新查证的前沿循证数据】，撰写一份详尽且专业的子宫内膜癌术后随访方案。
         
         【患者初步会诊草稿】：
         {self.treatment_context}
@@ -430,11 +441,27 @@ class AdvancedSearchSystem:
         【最新查证的前沿循证数据】：
         {current_knowledge}
 
-        【输出要求】（直接输出正文，严禁输出任何Markdown大标题或总结废话）：
-        1. **随访频率**：明确不同时间段的具体时间间隔。
-        2. **常规随访内容**：列出妇科专科查体及肿瘤标志物。
-        3. **可能提示复发的警示症状**：列出常见复发表现。
-        4. **生活方式与毒性管理**：必须高度凝练成一两句话连贯交待，绝对禁止分点展开或列清单！
+        【🚨 极其严格的格式红线】：
+        1. **严禁输出任何 Markdown 标题（如 #, ##, ###, ####）**！
+        2. **严禁使用中文数字大写序号（如 一、二、三）**！
+        3. 你只需严格按照下方的【强制输出模板】进行内容填充。
+        4. ⚠️ 内容必须体现医学专业度，请用详细、完整的医学长句进行阐述，千万不要只写简短的词组，但绝对禁止自行增加模板之外的大模块。
+
+        【强制输出模板】（请严格原样复制以下加粗标题，在破折号后用专业医学语言详尽补充）：
+        **1. 随访频率**
+        - （详细说明不同时间段如前2年、3~5年、5年后的具体复查时间间隔）
+        
+        **2. 常规随访内容**
+        - **专科查体**：（详细列出需要重点关注的全身状况评估及妇科盆腔专科检查项目，说明目的）
+        - **辅助检查**：（详细列出需要定期复查的肿瘤标志物及影像学检查，如超声、MRI、胸片等，并说明不同阶段的推荐检查频率）
+        
+        **3. 警示症状**
+        - （详细列举可能提示局部阴道穹窿复发或肺/淋巴结等远处转移的具体临床症状，并叮嘱患者出现异常时的就诊原则）
+        
+        **4. 生活方式与合并症管理**
+        - （结合患者草稿中真实的合并症情况，给出详尽的多学科随诊建议、放化疗毒性的长程预警与管理、以及体重/代谢干预的专业指导）
+        
+        💡 请先在 <think> 标签内思考，确认无误后再输出上方强制模板的填空结果！
         """)
 
         async def _run_agent1():
@@ -474,13 +501,15 @@ class AdvancedSearchSystem:
         你的任务是：输出最终版的 MDT 报告主干。
         
         ## 🛑 首席专家“元临床思维”法则 (核心红线)
-        1. **【现代临床用药纠偏】**：如果草稿推荐了含铂化疗，请直接在主方案中写明优选卡铂（Carboplatin），以降低毒性。
-        2. **【全局用药一致性】**：严密比对患者的合并症，整篇报告的主干方案必须统一口径！
-        3. **【预后数据强制量化与暗号保护】**：在【预后分析】中，你必须从助手的解析中直接提取具体的生存数据（OS/DFS等）和 HR 值！**并且必须原封不动地保留助手使用的带 ^^ 的文献角标（如 [^^11]），绝对不要修改它，也绝对不要把它变成 [1] 或 [2]！**
-        4. **【双占位符机制】**：在试验解析部分原封不动输出 `{{{{TRIAL_PLACEHOLDER}}}}`；在随访方案部分原封不动输出 `{{{{FOLLOWUP_PLACEHOLDER}}}}`。绝对不要自己写这两个部分！
-        5. 绝对不要自己写参考文献列表！绝对不要输出 JSON！写完第四部分立刻停止！
+        1. **【循证纠偏与最高仲裁权】（最核心红线！）**：你绝不能做盲从草稿的“应声虫”！请严密对比【初步会诊草稿】中的治疗方案与助手提供的【核心临床试验循证解析】。
+           - 若草稿方案与最新顶级证据（如 PORTEC-3、GOG258 等）推荐的治疗模式或时序发生冲突（例如：草稿建议“同步放化疗+辅助化疗”，但核心证据强烈推荐“纯序贯TC化疗+放疗”），**你必须以最新证据为准，果断重构主干方案！**
+           - 绝不允许生搬硬套草稿中的错误或过时路径！
+        2. **【毒性与用药个体化纠偏】**：在敲定循证主干方案后，必须结合患者草稿中的真实合并症进行用药微调。
+        3. **【全局用药一致性】**：严密比对患者的合并症，整篇报告的主干方案必须统一口径，前后逻辑自洽！
+        4. **【预后数据强制量化与暗号保护】**：在【预后分析】中，必须从助手解析中直接提取具体的生存数据、HR值及P值！必须原封不动保留助手使用的带 ^^ 的文献角标（如 [^^11]）！
+        5. **【双占位符机制】**：在试验解析部分原封不动输出 `{{TRIAL_PLACEHOLDER}}`；在随访方案部分原封不动输出 `{{FOLLOWUP_PLACEHOLDER}}`。绝对不要自己写这两个部分！
 
-        ## 📝 必须使用的固定输出模板（严格照抄结构，将【 】内的说明替换为真实的专业分析，禁止在正文保留【 】符号！）：
+        ## 📝 必须使用的固定输出模板（将【 】内的说明替换为真实的专业分析，禁止在正文保留【 】符号！）：
 
         # 妇科肿瘤 MDT 最终版会诊报告
 
@@ -502,14 +531,15 @@ class AdvancedSearchSystem:
         {{{{TRIAL_PLACEHOLDER}}}}
 
         ## 二、 术后处理
-        ### 1. 肿瘤专科主方案
-        【明确写出最终决定的放化疗方案。加上“💡 方案优化与说明”并阐述换药理由】
-        
-        ### 2. 多学科及合并症管理
-        【根据草稿中患者真实的合并症，分点列出各相关科室的随诊建议】
+        【请直接输出一个连续的数字列表（1、2、3...），将肿瘤方案、复查计划、分子追踪、多学科随诊无缝融合。请高度还原真实医生的精简干练风格】：
+        1、 **肿瘤专科方案**：综上所述，结合循证证据，建议患者行【填写最终敲定的放化疗方案/观察等，同样必须使用规格化的医学路径公式格式（如 "Systemic therapy ± EBRT ± VBT"）】。建议完成治疗/术后【填写首次复查影像学的时间和具体项目，如盆腔增强MRI/胸腹CT等】。 
+        2、 **分子标志物追踪**：追踪分子分型结果（如MMR、p53等），必要时根据结果调整后续靶向或免疫治疗方案。
+        3、 患者【提取草稿中的合并症1，如高血压/脑梗】，建议【对应科室，如心内科/神经内科】随诊，【给出简明建议，如评估化疗风险】。
+        4、 患者【提取草稿中的合并症2，如糖尿病】，建议【对应科室，如内分泌科】随诊，密切监测血糖。
+        【⚠️ 如果患者草稿中还有其他问题（如HPV阳性、肺结节、胃炎、甲状腺结节等），请继续用 5、6、7... 顺延列出，并给出极其简明的建议。若无则结束。】
 
         ## 三、 预后分析
-        【必须带有具体的 OS/DFS 百分比数据、P值与HR值！并在句子末尾保留原版的文献暗号角标，如 [^^11]】
+        【核心关注患者的生存率！并在句子末尾保留原版的文献暗号角标，如 [^^11]】
 
         ## 四、 随访方案
         {{{{FOLLOWUP_PLACEHOLDER}}}}
@@ -684,16 +714,22 @@ class AdvancedSearchSystem:
     
     
     async def analyze_topic(self, query: str) -> Dict:
-        """Main execution loop (全局去重 + 智能提取标题 + 策略分流 + CoT菜单初筛 + 终极脱壳)."""
-        logger.info(f"Starting Pure API Validation (Quality-First Serial Mode)")
+        """Main execution loop (终极并发版：局部沙盒隔离 + 暴力脱壳 + 全局去重)."""
+        logger.info(f"Starting Pure API Validation (High-Performance Concurrent Mode)")
         
         current_knowledge = ""
         cumulative_raw_evidence = "" 
         iteration = 0
         findings = []
 
-        # 🚀 全局跨轮去重记忆池：防止第二轮大模型重复看到第一轮选过的文献
+        # 🚀 全局跨轮去重记忆池
         global_seen_urls = set()
+
+        # =====================================================================
+        # 🚦 核心并发控制阀门 (Semaphore)
+        # =====================================================================
+        # 使用你顶配的硬件性能，允许 10 个 LLM 并发，5 个 API 请求并发
+        llm_semaphore, api_semaphore = get_global_semaphores()
 
         await self.initialize()
 
@@ -703,133 +739,140 @@ class AdvancedSearchSystem:
                 questions = [query]
                 
             self.questions_by_iteration[iteration] = questions
-            logger.info(f"🚀 Iteration {iteration+1}: Serially processing {len(questions)} sub-questions for maximum reasoning quality...")
+            logger.info(f"🚀 Iteration {iteration+1}: Concurrently processing {len(questions)} sub-questions...")
             
-            # 🛡️ 本轮待选文献池字典
-            unique_articles_dict = {}
-            
-            for question in questions:
-                logger.info(f"🔍 Deep processing question: {question}")
+            # 🛡️ 步骤 1：定义单个 Question 的【独立沙盒】并发流水线
+            async def fetch_and_parse_question(q: str):
+                logger.info(f"🔍 [Task Started] {q}")
+                
+                # 🚀 极其致命的修复：为每个并发问题创建【独立实例】！
+                # 彻底断绝多个问题共享同一个 Executor 导致的“历史记录互相污染”！
+                local_selector = ToolSelector(
+                    self.tool_planning_model,
+                    self.reasoning_model,
+                    self.mcp_tool_client,
+                    tool_info_data=None,
+                    embedding_api_key=None,
+                    embedding_cache=None,
+                    available_tools=self.chosen_tools,
+                )
+                local_executor = ToolExecutor(
+                    self.mcp_tool_client, self.error_log_path, self.fast_model
+                )
+
                 try:
-                    tool_calls = await self.tool_selector.run(question)
+                    async with llm_semaphore:
+                        t_calls = await local_selector.run(q)
                 except Exception as e:
-                    logger.warning(f"Tool selection failed: {e}")
-                    tool_calls = []
+                    logger.warning(f"Tool selection failed for {q}: {e}")
+                    t_calls = []
 
-                if not tool_calls:
-                    continue
+                if not t_calls:
+                    return []
 
-                # 🛡️ 补丁 1：将单引号强行换成双引号，防止 PubMed 报错，保留所有高级语法
-                for call in tool_calls:
+                # 单引号转双引号补丁
+                for call in t_calls:
                     if 'tool_input' in call and 'query' in call['tool_input']:
                         raw_q = str(call['tool_input']['query'])
                         call['tool_input']['query'] = raw_q.replace("'", '"')
 
                 try:
-                    tool_results = await self.tool_executor.run(tool_calls) or []
-                except Exception as e:
-                    logger.error(f"Tool execution failed for question '{question}': {e}")
-                    tool_results = []
-                
-                if tool_results:
-                    logger.info(f"🔍 [Debug-1] Tool returned {len(tool_results)} raw items.")
-
-                    # =================================================================
-                    # 🚨 极强 Debug：将三大 API 的原始返回值全部导出到本地 TXT 文件！
-                    # =================================================================
+                    async with api_semaphore:
+                        t_results = await local_executor.run(t_calls) or []
+                        
+                    # 🚨 X光机：将并发结果导出，如果再报错，这里就是铁证！
                     try:
-                        with open("API_RAW_OUTPUT.txt", "a", encoding="utf-8") as f:
-                            f.write(f"\n{'='*60}\n")
-                            f.write(f"🔍 当前检索词: {question}\n")
-                            f.write(f"{'='*60}\n")
-                            for idx, res in enumerate(tool_results):
-                                f.write(f"--- 来源片段 {idx+1} ---\n")
-                                f.write(str(res))
-                                f.write("\n\n")
-                    except Exception as e:
-                        logger.error(f"Failed to write API_RAW_OUTPUT.txt: {e}")
-                    # =================================================================
+                        with open("API_RAW_OUTPUT_CONCURRENT.txt", "a", encoding="utf-8") as f:
+                            f.write(f"\n{'='*60}\n🔍 并发检索词: {q}\n{'='*60}\n")
+                            for idx, res in enumerate(t_results):
+                                f.write(f"--- 来源片段 {idx+1} ---\n{str(res)}\n\n")
+                    except Exception:
+                        pass
+                        
+                except Exception as e:
+                    logger.error(f"Tool execution failed for '{q}': {e}")
+                    t_results = []
+                
+                return t_results
 
-                    # =====================================================================
-                    # 🛡️ 机制 2：智能提取标题、全局去重入库 (终极脱壳版)
-                    # =====================================================================
-                    for res in tool_results:
-                        res_str = ""
+            # ⚡ 并发发射所有查询！
+            logger.info(f"⚡ 启动并发检索 (发射 {len(questions)} 个独立沙盒探索分支)...")
+            all_questions_results = await asyncio.gather(
+                *(fetch_and_parse_question(q) for q in questions)
+            )
+
+            # 🛡️ 步骤 2：串行合并结果，安全地进行字典写入
+            unique_articles_dict = {}
+            for tool_results in all_questions_results:
+                if not tool_results: continue
+                
+                for res in tool_results:
+                    res_str = ""
+                    # 尝试内层解析
+                    if isinstance(res, dict) and "content" in res:
+                        raw_content = res["content"]
+                        try:
+                            import ast
+                            parsed_list = ast.literal_eval(raw_content)
+                            if isinstance(parsed_list, list):
+                                res_str = "".join([item.get("text", "") for item in parsed_list])
+                        except Exception:
+                            res_str = str(raw_content)
+                    else:
+                        res_str = str(res)
                         
-                        # 🚀 致命修复：解析大模型返回的嵌套结构，拒绝暴力的 str(res)！
-                        if isinstance(res, dict) and "content" in res:
-                            raw_content = res["content"]
-                            try:
-                                import ast
-                                # 安全地将 "[{'type': 'text', 'text': '...'}]" 解析为真正的 Python 列表
-                                parsed_list = ast.literal_eval(raw_content)
-                                if isinstance(parsed_list, list):
-                                    res_str = "".join([item.get("text", "") for item in parsed_list])
-                            except Exception:
-                                res_str = str(raw_content)
-                        else:
-                            res_str = str(res)
-                            
-                        # 如果没有成功脱壳，执行兜底清洗
-                        if "['type': 'text'" in res_str or "{'type': 'text'" in res_str:
-                            res_match = re.search(r"'text':\s*'(.*?)'}", res_str, re.DOTALL)
-                            if res_match:
-                                # 🚨 把 JSON 转义的字面 \n 转换成真实的换行符
-                                res_str = res_match.group(1).replace('\\n', '\n')
-                        else:
-                            # 即使没走兜底正则，也必须把字面 \n 转掉，防止 MCP 文本粘连
-                            res_str = res_str.replace('\\n', '\n')
-                                
-                        blocks = res_str.split("\n---\n") if "\n---\n" in res_str else [res_str]
+                    # 🚀 致命修复：无脑暴力替换字面上的 \n 为真实换行，这步必须最先做！
+                    res_str = res_str.replace('\\n', '\n')
+                    
+                    # 暴力剥离可能存在的 MCP JSON 外壳
+                    res_str = re.sub(r"^\[?\s*\{\s*['\"]type['\"]\s*:\s*['\"]text['\"]\s*,\s*['\"]text['\"]\s*:\s*['\"]", "", res_str)
+                    res_str = re.sub(r"['\"]\s*\}\s*\]?$", "", res_str)
                         
-                        for block in blocks:
-                            if not block.strip(): continue
+                    blocks = res_str.split("\n---\n") if "\n---\n" in res_str else [res_str]
+                    
+                    for block in blocks:
+                        if not block.strip(): continue
+                        
+                        url = ""
+                        pmid_match = re.search(r'pubmed\.ncbi\.nlm\.nih\.gov/(\d+)', block, re.IGNORECASE) or re.search(r'["\']?(?:PMID|uid|id)["\']?\s*[:=]\s*["\']?(\d{7,9})["\']?', block, re.IGNORECASE)
+                        nct_match = re.search(r'(NCT\d{8})', block, re.IGNORECASE)
+                        
+                        if pmid_match:
+                            url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid_match.group(1)}/"
+                        elif nct_match:
+                            url = f"https://clinicaltrials.gov/study/{nct_match.group(1)}"
+                        elif "openfda" in block.lower() or "brand_name" in block.lower() or "generic_name" in block.lower():
+                            url = "https://nctr-crs.fda.gov/fdalabel/ui/search"
                             
-                            # 1. 智能抓取 URL
-                            url = ""
-                            pmid_match = re.search(r'pubmed\.ncbi\.nlm\.nih\.gov/(\d+)', block, re.IGNORECASE) or re.search(r'["\']?(?:PMID|uid|id)["\']?\s*[:=]\s*["\']?(\d{7,9})["\']?', block, re.IGNORECASE)
-                            nct_match = re.search(r'(NCT\d{8})', block, re.IGNORECASE)
+                        if not url: continue
+                        
+                        title = "Unknown Title"
+                        title_match = re.search(r'^(?:Article )?Title:\s*([^\n]+)', block, re.IGNORECASE | re.MULTILINE)
+                        if not title_match:
+                            title_match = re.search(r'\bTitle:\s*([^\n]+)', block, re.IGNORECASE)
+                        if not title_match:
+                            title_match = re.search(r'"title"\s*:\s*"([^"]+)"', block, re.IGNORECASE) or re.search(r'"BriefTitle"\s*:\s*"([^"]+)"', block, re.IGNORECASE)
+                        if title_match:
+                            title = title_match.group(1).strip()
                             
-                            if pmid_match:
-                                url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid_match.group(1)}/"
-                            elif nct_match:
-                                url = f"https://clinicaltrials.gov/study/{nct_match.group(1)}"
-                            elif "openfda" in block.lower() or "brand_name" in block.lower() or "generic_name" in block.lower():
-                                url = "https://nctr-crs.fda.gov/fdalabel/ui/search"
-                                
-                            if not url: continue
+                        if len(title) < 15 and "FDA" not in title and "Unknown" not in title:
+                            continue
                             
-                            # 2. 智能抓取真实文献标题 (带多行锚点边界，防止误伤)
-                            title = "Unknown Title"
-                            title_match = re.search(r'^(?:Article )?Title:\s*([^\n]+)', block, re.IGNORECASE | re.MULTILINE)
-                            if not title_match:
-                                title_match = re.search(r'\bTitle:\s*([^\n]+)', block, re.IGNORECASE)
-                            if not title_match:
-                                title_match = re.search(r'"title"\s*:\s*"([^"]+)"', block, re.IGNORECASE) or re.search(r'"BriefTitle"\s*:\s*"([^"]+)"', block, re.IGNORECASE)
-                            if title_match:
-                                title = title_match.group(1).strip()
-                                
-                            # 3. 垃圾过滤
-                            if len(title) < 15 and "FDA" not in title and "Unknown" not in title:
-                                continue
-                                
-                            # 4. 🛡️ 跨轮全局绝对去重
-                            if url not in global_seen_urls:
-                                global_seen_urls.add(url) # 登记到全局记忆
-                                
-                                raw_text = block.strip()
-                                # 物理防爆剪刀
-                                if len(raw_text) > 6000:
-                                    raw_text = raw_text[:6000] + "\n\n...[文本过长，为防止 Token 溢出已执行物理截断]..."
-                                
-                                unique_articles_dict[url] = {
-                                    "url": url,
-                                    "title": title,
-                                    "content": raw_text
-                                }
+                        if url not in global_seen_urls:
+                            global_seen_urls.add(url) 
+                            
+                            raw_text = block.strip()
+                            if len(raw_text) > 6000:
+                                raw_text = raw_text[:6000] + "\n\n...[文本过长，为防止 Token 溢出已执行物理截断]..."
+                            
+                            unique_articles_dict[url] = {
+                                "url": url,
+                                "title": title,
+                                "content": raw_text
+                            }
 
             # =========================================================================
-            # 🚀 机制 2.5：精准分流（PubMed 零损耗直通，CT/FDA 启动专属提纯）
+            # 🚀 机制 2.5：精准分流（带限流的并发提纯）
             # =========================================================================
             keys_to_extract = []
             for url, art in unique_articles_dict.items():
@@ -838,17 +881,18 @@ class AdvancedSearchSystem:
                 elif "fda.gov" in url or "nctr-crs.fda.gov" in url:
                     keys_to_extract.append((url, "fda"))
 
-            async def process_extraction(url, s_type):
-                raw = unique_articles_dict[url]["content"]
-                extracted = await self._extract_structured_data(raw, s_type, query)
-                unique_articles_dict[url]["content"] = extracted
+            async def process_extraction_safely(url, s_type):
+                async with llm_semaphore:
+                    raw = unique_articles_dict[url]["content"]
+                    extracted = await self._extract_structured_data(raw, s_type, query)
+                    unique_articles_dict[url]["content"] = extracted
                 
             if keys_to_extract:
-                logger.info(f"🧬 [Data Refinery] 对 {len(keys_to_extract)} 篇结构化数据 (CT/FDA) 启动专属提纯压缩...")
-                await asyncio.gather(*(process_extraction(u, t) for u, t in keys_to_extract))
+                logger.info(f"🧬 [Data Refinery] 对 {len(keys_to_extract)} 篇结构化数据启动受控并发提纯...")
+                await asyncio.gather(*(process_extraction_safely(u, t) for u, t in keys_to_extract))
 
             # =========================================================================
-            # 🚀 机制 3：大模型“菜单点菜法”标题初筛（统一模型 + 思维链剥离 + 强制重试护栏）
+            # 🚀 机制 3：大模型“菜单点菜法”标题初筛
             # =========================================================================
             articles_list = list(unique_articles_dict.values())
             selected_articles = []
