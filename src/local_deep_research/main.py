@@ -168,6 +168,7 @@ async def run_evidence_update(treatment_context: str):
     search_payload = {
         "oncology_profile": structured_task.get("oncology_core", {}),
         "major_comorbidities_affecting_treatment": structured_task.get("comorbidities", {}).get("major_comorbidities", []),
+        "incidental_findings": structured_task.get("comorbidities", {}).get("incidental_findings", []),
         "preliminary_plan": structured_task.get("proposed_plan", {}),
         "specific_pico_questions": structured_task.get("clinical_questions_for_ebm", []),
         "baseline_references": {"max_index": max_index}
@@ -221,19 +222,10 @@ async def run_evidence_update(treatment_context: str):
                  new_evidence_text = parts[0].strip()
                  new_refs_text = parts[1].strip()
              
-             # 获取在前端被截留的次要异常，自动生成轻量级分诊模块
-             incidental_findings = structured_task.get("comorbidities", {}).get("incidental_findings", [])
-             referral_section = ""
-             if incidental_findings:
-                 referral_section = "\n### 其他非肿瘤异常及随访建议\n"
-                 for idx, item in enumerate(incidental_findings, 1):
-                     referral_section += f"{idx}. **关于[{item}]**：建议转诊至相应专科门诊进一步评估治疗方案。\n"
-             
              # 将重写后的终极正文、次要并发症转诊、旧文献列表、新文献列表按序无缝缝合
              combined_report = f"### 🏥 循证校验与优化的最终治疗方案 (Deep EBM Synthesized Plan)\n\n" \
                                f"{new_evidence_text}\n" \
-                               f"{referral_section}\n" \
-                               f"{separator}\n" \
+                               f"\n{separator}\n" \
                                f"{baseline_refs}\n"
              
              if new_refs_text:
