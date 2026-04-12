@@ -101,7 +101,7 @@ class AdvancedSearchSystem:
     def __init__(
         self,
         max_iterations=2,
-        questions_per_iteration=4,
+        questions_per_iteration=8,
         is_report=True,
         chosen_tools: list[str] = None,
         error_log_path: str = "",
@@ -192,51 +192,52 @@ class AdvancedSearchSystem:
 
     async def _get_follow_up_questions(self, current_knowledge: str, query: str) -> List[str]:
         now = datetime.now().strftime("%Y-%m-%d")
-        upstream_report = self.treatment_context
+        structured_data = json.dumps(self.structured_task, ensure_ascii=False, indent=2)
         
         prompt = f"""
         你是一名顶级的“循证医学检索转化专家”（Clinical Evidence Coordinator）。
-        上游的 RAG 系统生成了一份【初步 MDT 会诊报告】。
+        上游系统已经为你提取好了【患者的核心结构化数据】，包含初步治疗方案、合并症以及PICO问题。
 
-        你的核心任务是：
-        1. 【无损提取】：精准理解报告中的“患者全息画像”、“主干治疗方案”及“PICO具体问题”。
-        2. 【🚨 临床方案主动质疑（Clinical Challenge）】：主动审视上游推荐的化疗药物（如顺铂）是否属于毒性较大或已过时的传统药物。如果是，必须生成与现代更优替代药物（如卡铂）的“头对头对比”检索词！
-        3. 【🚨 破解旧文献陷阱（通用时效性策略！）】：当上游要求查询某经典重磅试验（如 PORTEC、GOG 系列）的“最新数据”时，PubMed 通常会把多年前的初版报告排在第一。为了强制召回【任何年限】的最新随访结果，你绝对不能把年份写死（比如不能只写 10-year，因为有些试验可能是 7年或 5年随访），你**必须使用通用的随访关键词簇，并配合年份标签！**
-           - ❌ 错误示范1：PORTEC-3 overall survival (太宽泛，会搜出2018年旧文)
-           - ❌ 错误示范2：PORTEC-3 10-year overall survival (太死板，如果该试验只有5年随访数据就会漏检)
-           - ✅ 正确示范：PORTEC-3 AND ("follow-up"[Title/Abstract] OR "long-term"[Title/Abstract] OR "updated"[Title/Abstract] OR "final"[Title/Abstract]) AND 2020:2026[dp]
-        4. 【转化检索词】：将这些意图转化为能在 PubMed 纯英文数据库中进行精准匹配的高级 Boolean 检索词。
+        【🚨 核心检索策略：三足鼎立（极度重要！）】：
+        你的并发检索额度上限为 {self.questions_per_iteration} 个检索词。你必须充分利用这些额度，**绝对不能只查 PICO 问题！**你的检索词必须全面覆盖以下三个维度：
 
-        【上游传入的初步 MDT 会诊报告】：
-        {upstream_report}
+        1. **【灯塔试验复核（最高优先级，占用 1-3 个额度）】**：
+           - 根据患者的具体分期，严格从以下灯塔库中挑选对应的重磅试验进行检索。
+           - 早期高危及局部晚期（III、IVA期）：必须同时核查 PORTEC-3 和 GOG-0258。
+           - 晚期（IVB期）及复发一线：必须核查 GOG-209, NRG-GY018, RUBY。
+           - 晚期复发（二线及以上）：必须核查 KEYNOTE-775。
+           - ⚠️ 检索词示例：PORTEC-3 AND ("survival"[Title/Abstract] OR "outcomes"[Title/Abstract]) AND 2018:2026[dp]
+
+        2. **【主干方案深度审阅（核心纠偏，占用 2-3 个额度）】（🚨 此前被你忽略的重点！）**：
+           - 你必须直接审视【初步治疗方案（main_oncology_treatment）】中提出的具体放疗参数（如外照射、阴道近距离放疗）、具体化疗方案（如 TC、TAC 方案等）。
+           - 针对该方案在当前患者分期和病理（如浆液性癌、G3）下的疗效、安全性以及是否为标准治疗（Standard of Care），生成直接的验证性检索词！
+           - ⚠️ 检索词示例：("endometrial cancer" OR "endometrial carcinoma") AND "serous" AND ("Stage III" OR "Stage IIIA") AND "TC regimen" AND "radiotherapy" AND 2018:2026[dp]
+
+        3. **【合并症质询与高价值PICO（占用 1-2 个额度）】**：
+           - 提取结构化数据中遗留的 PICO 问题，剔除无意义的边缘问题（如缺乏定论的标记物）。
+           - 针对患者真实的重大合并症（如冠心病、肾功能不全），生成关于药物毒性替换（如 卡铂 AND 顺铂 AND 头对头对比）或剂量调整的检索词。
+
+        【上游传入的结构化数据】：
+        {structured_data}
         
         【当前已验证的知识】：
         {current_knowledge}
-
-        【🚨 检索词设计红线】：
-        1. 必须使用纯正的英文医学缩写，绝不能用自然语言长句问问题！
-        2. 如果发现了需要质疑的老旧药物，必须生成对比检索词（如：Endometrial cancer Cisplatin Carboplatin efficacy toxicity）。
-        3. 必须精确生成 {self.questions_per_iteration} 个英文检索词组。
 
         【强制输出 JSON 格式】：
         你必须输出合法的 JSON 格式。
         ```json
         {{
-            "lossless_extraction": {{
-                "patient_status": "极简提炼患者的核心分期、病理、合并症",
-                "proposed_treatment": "无损提取上游推荐的主干方案",
-                "pico_questions": "提取上游在文末留下的具体待查问题"
-            }},
-            "clinical_challenge": "记录药物替换质疑，或对抗旧文献的通用策略（如：我使用了 'follow-up' OR 'updated' 组合词，并加上了近期年份标签，以防止漏检）",
-            "analysis": "结合全局方案、PICO问题和你的主动质疑，简述检索词构建策略。",
+            "discovery_reasoning": "简述你如何分配这 {self.questions_per_iteration} 个检索额度，以确保全面覆盖灯塔试验、主干方案审阅和合并症质询。",
             "sub_queries": [
-                "keyword query 1", 
-                "keyword query 2",
-                "keyword query 3"
+                "灯塔试验检索词1",
+                "灯塔试验检索词2 (若有)",
+                "主干方案具体放化疗参数审阅词1",
+                "主干方案具体放化疗参数审阅词2",
+                "合并症/毒性替代/PICO检索词1"
             ]
         }}
         ```
-        💡 请直接输出 JSON 代码块！
+        💡 请直接输出 JSON 代码块，确保充分利用 {self.questions_per_iteration} 个并发额度，不可遗漏对主干方案的深度核查！
         """
 
         try:
@@ -314,6 +315,105 @@ class AdvancedSearchSystem:
             logger.error(f"Failed to synthesize answer: {e}")
             return "Error synthesizing evidence."
 
+    async def _run_prognosis_retrieval_track(self) -> str:
+        """
+        🚀 完全独立的预后检索流水线：
+        专设检索词 -> 独立调用PubMed -> 放宽限制提取 Top 10 -> 生成纯净专属预后文献库
+        """
+        logger.info("🧬 [Prognosis Track] 启动独立预后数据检索分支...")
+        
+        # 1. 提取结构化肿瘤信息生成精准检索词
+        oncology_core = self.structured_task.get("oncology_profile", {})
+        if isinstance(oncology_core, dict):
+            diag = oncology_core.get("diagnosis_and_stage", "")
+            patho = oncology_core.get("pathology_and_molecular", "")
+            base_info = f"{diag} {patho}"
+        else:
+            base_info = str(oncology_core)
+            
+        # 🚀 [修改点 1]：增加“分期泛化（降维）”逻辑，大幅提升召回率
+        prompt = textwrap.dedent(f"""
+        你是一名专业的 PubMed 检索词生成专家。
+        请根据以下患者信息，生成一个【精简、高召回率且带有时效性】的预后生存率检索词（Boolean string）。
+        
+        【患者信息】：
+        {base_info}
+        
+        【🚨 严苛规则（极度重要）】：
+        1. **核心要素**：你的检索词只能包含：疾病大类名称 + 核心病理类型 + 分期。
+        2. **【分期泛化降维】（最核心红线！）**：由于医学文献摘要极少精确到子分期，如果患者的分期带有细分字母或数字（如 IIIA1期、IIIC2期），你**必须**将其降维简化为大分期（如 "Stage III" OR "Stage IIIA"）写入检索词！绝对禁止在检索词中保留 "IIIA1" 这种极度具体的子分期，否则会导致查无文献！
+        3. **拒绝过度拟合**：绝对不要把具体的突变（如 p53, PR-, Ki-67）或具体的转移部位塞进检索词里！
+        4. **【强制年份限制与后缀】**：必须在末尾加上：AND ("survival"[Title/Abstract] OR "prognosis"[Title/Abstract]) AND 2018:2026[dp]
+        
+        【正确示范（注意分期的降维处理）】：
+        ("endometrial cancer" OR "endometrial carcinoma") AND "serous" AND ("Stage III" OR "Stage IIIA") AND ("survival"[Title/Abstract] OR "prognosis"[Title/Abstract]) AND 2018:2026[dp]
+        
+        请直接输出最终的英文检索词字符串，不要有任何多余的解释，不要带引号。
+        """)
+        
+        try:
+            resp = await invoke_with_timeout_and_retry(self.fast_model, prompt, timeout=120.0)
+            prog_query = remove_think_tags(resp.content).strip().replace('"', '')
+        except Exception:
+            prog_query = "Endometrial cancer survival rate"
+
+        logger.info(f"🧬 [Prognosis Track] 专属预后检索词: {prog_query}")
+        
+        # 2. 独立调用检索工具
+        local_selector = ToolSelector(
+            self.tool_planning_model, self.reasoning_model, self.mcp_tool_client, available_tools=["search_recent_pubmed"]
+        )
+        local_executor = ToolExecutor(
+            self.mcp_tool_client, self.error_log_path, self.fast_model
+        )
+        
+        try:
+            # 🚀 [修改点 1]：向工具选择器下达强硬命令，强制拉取大量文献！
+            force_command = (
+                f"CRITICAL: Search for survival rates using this EXACT query: {prog_query}. "
+                f"You MUST set the retrieval parameter (e.g. max_results, top_k, or retmax) to at least 5 "
+                f"to ensure we have a large enough cohort data pool."
+            )
+            t_calls = await local_selector.run(force_command)
+            t_results = await local_executor.run(t_calls) or []
+        except Exception as e:
+            logger.error(f"Prognosis search failed: {e}")
+            return "检索预后文献失败。"
+            
+        # 3. 结果解析与文献库挂载 (🚨 放宽限制到 10 篇)
+        prog_evidence = ""
+        count = 0
+        
+        for res in t_results:
+            res_str = str(res).replace('\\n', '\n')
+            blocks = res_str.split("\n---\n") if "\n---\n" in res_str else [res_str]
+            for block in blocks:
+                if not block.strip() or "Unknown Title" in block: continue
+                
+                url = ""
+                pmid_match = re.search(r'pubmed\.ncbi\.nlm\.nih\.gov/(\d+)', block, re.IGNORECASE)
+                if pmid_match: url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid_match.group(1)}/"
+                
+                title_match = re.search(r'Title:\s*([^\n]+)', block, re.IGNORECASE)
+                title = title_match.group(1).strip() if title_match else "Prognosis Study"
+                
+                if url and url not in self.all_links_of_system:
+                    # 关键：将这批文献同样挂载到全局暗号池中，保证最后统一输出
+                    idx = self.ref_pool.add(title=title, citation="", link=url)
+                    count += 1
+                    prog_evidence += f"\n#### [^^{idx}] {title}\n{block[:3000]}\n"
+                    self.all_links_of_system.append(url)
+                    
+                    if count >= 10: break  # 🚨 放宽到 10 篇，专供预后 Agent 大快朵颐
+            if count >= 10: break
+            
+        if not prog_evidence.strip():
+            return "未检索到相关的专属预后文献。"
+            
+        logger.info(f"🧬 [Prognosis Track] 成功抓取 {count} 篇专属预后文献，已与主库物理隔离。")
+        return prog_evidence
+    
+    
     def _reindex_references(self, content: str) -> Tuple[str, str]:
         """
         重排引用序号，并生成与 graph-ec 完全一致的参考文献格式。
@@ -393,7 +493,7 @@ class AdvancedSearchSystem:
         return new_content, refs_text
 
     async def _generate_detailed_report(
-        self, current_knowledge: str, findings: List[Dict], query: str, iteration: int
+        self, current_knowledge: str, findings: List[Dict], query: str, iteration: int, prognosis_evidence: str = ""
     ):
         # 1. 恢复坚如磐石的文献标签池 (带 ^^ 暗号)
         pool_text = ""
@@ -401,35 +501,38 @@ class AdvancedSearchSystem:
             pool_text += f"[^^{self.ref_pool.base_idx + i}] {r.title}\n"
 
         trial_prompt = textwrap.dedent(f"""
-        你是一名顶尖的妇科肿瘤循证医学分析专家。请仔细阅读以下【最新查证的前沿循证数据】，并结合【当前患者真实病情】，为 MDT 会诊报告撰写《核心临床试验循证解析》部分。
+        你是一名顶尖的妇科肿瘤循证医学分析专家。请仔细阅读以下【最新查证的前沿循证数据】，为 MDT 报告撰写《核心临床试验循证解析》部分。
 
         【当前患者真实病情草稿】（🚨 你的核心匹配标准！）：
         {self.treatment_context}
         
-        【最新查证的前沿循证数据】（这是你唯一的数据来源！）：
+        【最新查证的前沿循证数据】：
         ---
         {current_knowledge}
         ---
         文献标签池：
         {pool_text}
 
-        【🚨 核心任务与极度严格的防伪造红线】：
-        1. **【宁缺毋滥，毒药级过滤】**：如果查到的文献与子宫内膜癌完全无关（如出现了普拉提、骨科等），直接无视！
-        2. **【严禁复读机行为】**：如果筛选只剩下 1 个核心试验，只准输出 1 个。多篇文献讲同一试验必须合并归纳（如 [^^11][^^12]）。
-        3. **【🚨 反幻觉绝对红线（Zero-Hallucination）】**：你提取的任何数据（包括试验期数、OS/DFS、HR值等），**必须且只能来自于上方的《前沿循证数据》原文！**
-           - ⚠️ 如果原文写的是“回顾性研究（Retrospective）”，你必须如实写，绝对禁止把它伪装成随机对照III期！
-           - ⚠️ 如果原文写的是“改良版/Inverted PORTEC-3”，你必须写明是改良版，绝对禁止把它当成原版瞎编！
-           - ⚠️ 如果原文中没有提供精确的数字，直接写“原文献未提供具体数值”，绝对禁止动用你的记忆去捏造数据！
-        4. **【强制输出模板】**：对于保留下来的核心试验，必须严格按照以下结构输出（最多不超过3个试验）：
-        
-        #### [填写试验名称及 NCT号（若有）] [填写对应的文献数字，必须照抄 ^^ 暗号，如 [^^11] ]
-        - **试验背景与入组标准**：提取试验期数及纳入标准，评估与当前患者的匹配度。
-        - **具体干预方案**：极度详细！明确放化疗的具体参数（如原文有的话）。
-        - **关键疗效数据**：罗列原文中存在的 OS、DFS 百分比，HR 值和 P 值。**(💡若原文无具体数据，直接填写“原文献未提供详细生存期数据”！)**
-        - **亚组与分子特征分析**：提取不同分子分型的获益差异。**(💡若无，简要说明“未提及分子分型差异”)**
-        - **毒性与临床意义**：简述关键毒副反应，结合本患者的特殊合并症，给出明确的最终指导定论。
+        【🚨 核心任务与普适性医学逻辑红线】：
+        1. **【防误杀豁免条款】**：如果文献入组标准写的是大类分期（如“纳入 III 期”），那么处于该阶段子分期的患者（如 IIIA1 期）**完全符合**入组条件！绝对不可因为带有子分期字母就误杀重磅试验！
+        2. **【反幻觉绝对红线】**：你提取的任何数据必须且只能来自于上方的《前沿循证数据》原文！
 
-        5. **【全中文与防篡改角标】**：绝对禁止自行编造序号！必须直接照抄《文献标签池》中带暗号的角标（如 [^^11]），绝不可省去 ^^ 符号！
+        3. **【🚨 强制输出格式（必须高度还原顶级 ASCO 学术会议汇报风格）】**：
+        对于保留下来的核心试验（如 PORTEC-3、GOG-0258等），必须严格按照以下格式输出。**必须精确提取原文中的 Gy 剂量、mg/m² 剂量、以及精确到小数点的生存百分比和 HR 值！如果原文未提供，则填未提供，严禁编造！**
+        
+        #### [填写试验名称，如 PORTEC-3] 是一项 [填写试验类型，如 多中心、随机Ⅲ期试验] [^^11]
+        - **纳入人群**：[详细罗列原文要求的具体分期、组织学类型等入排标准。]
+          - 💡 **入组匹配校验**：经严密核对，当前患者（[极简填写患者对应的特征]）**完全满足**该试验入组标准。
+        - **分组与干预方案**：
+          - [干预组A，如 放化疗组]：[必须极其详细！如 盆腔外照射 48.6 Gy/1.8 Gy/次；同步顺铂 50 mg/m²；随后卡铂 AUC 5 + 紫杉醇 175 mg/m²...]
+          - [干预组B，如 单纯放疗组/单纯化疗组]：[详细的用药剂量、周期等参数]
+        - **整体生存获益**：[必须包含精确数字！如 5年 OS：放化疗组 81.4% vs 单纯放疗组 76.1% (HR 0.70，p=0.034)。]
+        - **分子分型与亚组分析**：[提取不同分子分型（如 p53突变）在试验中的具体获益数据。]
+        - **毒性与本患者指导意义**：[提取具体毒性（如 神经病变、心血管毒性），结合本患者真实的合并症给出安全指导意见。]
+
+        4. **【全中文与防篡改角标】**：必须直接照抄《文献标签池》中带暗号的角标（如 [^^11]）。
+        
+        💡 请先在 <think> 标签内进行【入组匹配校验】和【数据精准核对】，确认后再输出！
         """)
         
         followup_prompt = textwrap.dedent(f"""
@@ -464,32 +567,87 @@ class AdvancedSearchSystem:
         💡 请先在 <think> 标签内思考，确认无误后再输出上方强制模板的填空结果！
         """)
 
+        # =====================================================================
+        # 🤖 智能体 3：预后数据提取专员 (零幻觉、纯事实提取)
+        # =====================================================================
+        prognosis_prompt = textwrap.dedent(f"""
+        你是一位严谨的肿瘤流行病学数据提取专家。
+        任务：阅读以下【专为您提供的大容量预后专属文献库】，提取患者相关的预后生存率数据。
+
+        【当前患者真实病情草稿】：
+        {self.treatment_context}
+        
+        【专属预后文献库】（🚨 这是你唯一的数据源）：
+        ---
+        {prognosis_evidence}
+        ---
+
+        【🚨 提取规则与普适性医学逻辑】：
+        1. **拒绝长篇大论**：不需要分析发病机制，你的唯一目标是寻找带有百分比的存活率数字（如 3年/5年/10年 OS、DFS、PFS 或中位生存期）。
+        2. **【分期包容性与防漏杀机制】（最核心红线！）**：医学流行病学文献极少精确到子分期统计。如果文献提供了该患者所属的【大类分期】（例如：文献写 Stage III，而患者是 IIIA1）或【宏观类别】（如高危患者、浆液性癌总体队列）的生存率数据，你**必须**直接提取该数据，并标明这是“该分期大类/该亚型总体的生存数据”！绝对禁止因为没有精确匹配子分期就输出“未提及”！
+        3. **零幻觉底线**：只有当文献库中连该患者的大分期、高危分类或特定病理（如浆液性）的数据都完全没有时，才允许输出：“专属检索文献未提及相关预后生存率数据”。
+        4. **格式化输出**：输出风格必须紧凑客观，必须包含具体的百分比数据。
+        5. **必留角标**：必须直接照抄上方文献库中自带的带 ^^ 的暗号（如 [^^11]），证明你的数据出处！
+        
+        💡 请先在 <think> 标签内运用“层级分期包容性逻辑”审视文献，找出对应大类的生存率，确认后再输出最终结果！
+        """)
+
         async def _run_agent1():
             for attempt in range(3):
                 try:
-                    res = await invoke_with_timeout_and_retry(self.report_model, trial_prompt, timeout=800.0, max_retries=3)
+                    # 🚀 将 timeout 降至 180 秒 (3分钟)，若卡死立即重试
+                    res = await invoke_with_timeout_and_retry(self.report_model, trial_prompt, timeout=180.0, max_retries=2)
                     content = remove_think_tags(res.content).strip()
                     if len(content) > 3000 or content.count("####") > 4 or "#### 4" in content:
                         logger.warning(f"⚠️ 触发护栏：Agent 1 试验数量超标 (尝试 {attempt+1}/3)，打回重做...")
                         if attempt < 2: continue
                     return content
                 except Exception as e:
-                    logger.error(f"Agent 1 error: {e}")
+                    logger.warning(f"⚠️ Agent 1 执行超时或报错 (尝试 {attempt+1}/3): {e}")
                     if attempt == 2: return "临床试验数据解析生成失败，请查阅原始文献。"
 
         async def _run_agent15():
-            try:
-                res = await invoke_with_timeout_and_retry(self.report_model, followup_prompt, timeout=800.0, max_retries=3)
-                return remove_think_tags(res.content).strip()
-            except Exception as e:
-                logger.error(f"Agent 1.5 error: {e}")
-                return "随访方案生成失败，请参考指南常规随访。"
+            for attempt in range(3):
+                try:
+                    res = await invoke_with_timeout_and_retry(self.report_model, followup_prompt, timeout=180.0, max_retries=2)
+                    return remove_think_tags(res.content).strip()
+                except Exception as e:
+                    logger.warning(f"⚠️ Agent 1.5 执行超时或报错 (尝试 {attempt+1}/3): {e}")
+                    if attempt == 2: return "随访方案生成失败，请参考指南常规随访。"
+                
+        async def _run_prognosis_agent():
+            for attempt in range(3):
+                try:
+                    res = await invoke_with_timeout_and_retry(self.report_model, prognosis_prompt, timeout=180.0, max_retries=2)
+                    return remove_think_tags(res.content).strip()
+                except Exception as e:
+                    logger.warning(f"⚠️ Agent 3 (预后) 执行超时或报错 (尝试 {attempt+1}/3): {e}")
+                    if attempt == 2: return "暂无具体预后生存率数据。"
 
-        logger.info("🤖 [Agent 1 & 1.5] 正在并发执行：生成试验深度解析 & 定制随访规划...")
-        trial_analysis, followup_plan = await asyncio.gather(_run_agent1(), _run_agent15())
+        logger.info("🤖 [多智能体并发] 正在执行：试验解析 & 定制随访 & 预后提取 (⏳ 已开启3分钟防卡死重试机制)...")
+        
+        # 🚀 给整个并发池加上最外层的强制断路器（总超时设为 10 分钟，绝对防止死锁）
+        try:
+            trial_analysis, followup_plan, prognosis_data = await asyncio.wait_for(
+                asyncio.gather(
+                    _run_agent1(), 
+                    _run_agent15(), 
+                    _run_prognosis_agent()
+                ),
+                timeout=600.0 
+            )
+        except Exception as e:
+            logger.error(f"❌ [致命错误] 多智能体并发执行彻底超时或崩溃: {e}")
+            trial_analysis = "试验解析模块超时失败。"
+            followup_plan = "随访方案生成超时失败。"
+            prognosis_data = "预后数据提取超时失败。"
+            
+        logger.info(f"📊 [预后专员提取结果]: {prognosis_data}")
+        incidental_findings = self.structured_task.get("incidental_findings", [])
+        incidental_str = "、".join(incidental_findings) if incidental_findings else "无"
 
         # =====================================================================
-        # 🤖 智能体 2：子宫内膜癌 MDT 首席主笔 (全角方括号替换版，防 P<0.05 误杀)
+        # 🤖 智能体 2：子宫内膜癌 MDT 首席主笔 
         # =====================================================================
         main_prompt = textwrap.dedent(f"""
         你是一名具备顶尖国际视野的妇科肿瘤 MDT 首席专家。
@@ -497,17 +655,23 @@ class AdvancedSearchSystem:
         {self.treatment_context}
         【助手整理的临床试验深度解析】：
         {trial_analysis}
+        【预后专员提取的客观生存事实】（请将其作为不可辩驳的铁证直接采用！）：
+        {prognosis_data}
+        【翻译官拦截的次要异常】（须进行常规专科转诊）：
+        {incidental_str}
 
         你的任务是：输出最终版的 MDT 报告主干。
         
         ## 🛑 首席专家“元临床思维”法则 (核心红线)
-        1. **【循证纠偏与最高仲裁权】（最核心红线！）**：你绝不能做盲从草稿的“应声虫”！请严密对比【初步会诊草稿】中的治疗方案与助手提供的【核心临床试验循证解析】。
-           - 若草稿方案与最新顶级证据（如 PORTEC-3、GOG258 等）推荐的治疗模式或时序发生冲突（例如：草稿建议“同步放化疗+辅助化疗”，但核心证据强烈推荐“纯序贯TC化疗+放疗”），**你必须以最新证据为准，果断重构主干方案！**
-           - 绝不允许生搬硬套草稿中的错误或过时路径！
+        1. **【循证方案的最高仲裁权】（最核心红线！）**：你绝不能做盲从草稿的“应声虫”！
+           - 你的最终治疗方案**必须，且只能**建立在上方《核心临床试验循证解析》中**患者完全符合入组标准的重磅试验**基础之上！
+           - 若初步草稿中的方案与上方通过了入组校验的最新试验推荐方案发生冲突，你必须以临床试验为准，果断重构主干方案！
+           - **绝对不允许在方案中推荐患者根本不符合入组条件的治疗模式！**
         2. **【毒性与用药个体化纠偏】**：在敲定循证主干方案后，必须结合患者草稿中的真实合并症进行用药微调。
         3. **【全局用药一致性】**：严密比对患者的合并症，整篇报告的主干方案必须统一口径，前后逻辑自洽！
-        4. **【预后数据强制量化与暗号保护】**：在【预后分析】中，必须从助手解析中直接提取具体的生存数据、HR值及P值！必须原封不动保留助手使用的带 ^^ 的文献角标（如 [^^11]）！
-        5. **【双占位符机制】**：在试验解析部分原封不动输出 `{{TRIAL_PLACEHOLDER}}`；在随访方案部分原封不动输出 `{{FOLLOWUP_PLACEHOLDER}}`。绝对不要自己写这两个部分！
+        4. **【预后数据强制量化与暗号保护】**：在【预后分析】中，必须直接自然地引用【预后专员提取的客观生存事实】中的具体数据！必须原封不动保留专员使用的带 ^^ 的文献角标（如 [^^11]）。
+        5. **【合并症与次要异常的“逐条转诊”红线】**：在【术后处理】中，你必须将草稿中提到的**每一个重大合并症**和**每一个次要异常**，单独列为一个带有数字序号的项目给出专科转诊建议。
+        6. **【双占位符机制】**：在试验解析部分原封不动输出 `{{{{TRIAL_PLACEHOLDER}}}}`；在随访方案部分原封不动输出 `{{{{FOLLOWUP_PLACEHOLDER}}}}`。绝对不要自己写这两个部分！
 
         ## 📝 必须使用的固定输出模板（将【 】内的说明替换为真实的专业分析，禁止在正文保留【 】符号！）：
 
@@ -527,25 +691,26 @@ class AdvancedSearchSystem:
         - **其他权威指南推荐方案**（若证据中有）：
         `【在此处用代码块包裹该指南推荐方案，同样必须使用规格化的医学路径公式格式】`
         **分析**：【在此处写出该指南的指导意见分析】
+        
         ### 3. 核心临床试验循证解析
         {{{{TRIAL_PLACEHOLDER}}}}
 
         ## 二、 术后处理
-        【请直接输出一个连续的数字列表（1、2、3...），将肿瘤方案、复查计划、分子追踪、多学科随诊无缝融合。请高度还原真实医生的精简干练风格】：
-        1、 **肿瘤专科方案**：综上所述，结合循证证据，建议患者行【填写最终敲定的放化疗方案/观察等，同样必须使用规格化的医学路径公式格式（如 "Systemic therapy ± EBRT ± VBT"）】。建议完成治疗/术后【填写首次复查影像学的时间和具体项目，如盆腔增强MRI/胸腹CT等】。 
-        2、 **分子标志物追踪**：追踪分子分型结果（如MMR、p53等），必要时根据结果调整后续靶向或免疫治疗方案。
-        3、 患者【提取草稿中的合并症1，如高血压/脑梗】，建议【对应科室，如心内科/神经内科】随诊，【给出简明建议，如评估化疗风险】。
-        4、 患者【提取草稿中的合并症2，如糖尿病】，建议【对应科室，如内分泌科】随诊，密切监测血糖。
-        【⚠️ 如果患者草稿中还有其他问题（如HPV阳性、肺结节、胃炎、甲状腺结节等），请继续用 5、6、7... 顺延列出，并给出极其简明的建议。若无则结束。】
+        【请直接输出一个连续的数字列表（1、2、3...），高度还原真实医生的精简干练开医嘱风格】：
+        1、 **肿瘤专科方案**：综上所述，结合上述患者符合入组标准的核心循证证据，建议患者行【填写最终敲定的放化疗方案/观察等】。建议完成治疗/术后【填写首次复查影像学的时间和具体项目】。 
+        2、 **分子标志物追踪**：追踪分子分型结果（如MMR、p53等），必要时根据结果调整后续方案。
+        3、 **【合并症/次要异常 1 名称，如：冠心病】**：建议转诊至【对应科室】门诊进一步评估与随诊，【给出简明建议，如评估放化疗风险】。
+        4、 **【合并症/次要异常 2 名称，如：浅表性胃炎】**：建议转诊至消化内科门诊进一步评估与处理。
+        【⚠️ 请继续用 5、6、7... 顺延列出患者所有的重大合并症和次要异常，每一个异常必须单独占一条！若全部罗列完毕则结束该段。】
 
         ## 三、 预后分析
-        【核心关注患者的生存率！并在句子末尾保留原版的文献暗号角标，如 [^^11]】
+        【结合患者特有高危因素，将上方预后专员提取的数据极其精简干练地串联进来。如果专员反馈“暂无数据”，则使用指南通用的评估话术。如果有详细的数据必须保留！】
 
         ## 四、 随访方案
         {{{{FOLLOWUP_PLACEHOLDER}}}}
         
         💡 请先在 <think> 标签内思考确认无误后再输出正文！
-        """)
+        """)  
 
         logger.info("🤖 [Agent 2] 正在统筹生成 MDT 报告主干并确保全局逻辑一致性...")
         
@@ -559,7 +724,6 @@ class AdvancedSearchSystem:
                 )
                 content = remove_think_tags(response.content)
                 
-                # 防 P<0.05 误杀版护栏
                 banned_phrases = ["代码块包裹", "在此处写出", "严禁遗漏", "医学路径公式", "【", "】"]
                 lazy_generation_detected = any(phrase in content for phrase in banned_phrases)
                 
@@ -595,7 +759,6 @@ class AdvancedSearchSystem:
                 else:
                     content += f"\n\n## 四、 随访方案\n{followup_plan}"
 
-            # 最终排版，去除暗号
             new_content, refs_section = self._reindex_references(content)
             full_report = new_content + "\n" + refs_section
             return full_report, full_report 
@@ -728,10 +891,12 @@ class AdvancedSearchSystem:
         # =====================================================================
         # 🚦 核心并发控制阀门 (Semaphore)
         # =====================================================================
-        # 使用你顶配的硬件性能，允许 10 个 LLM 并发，5 个 API 请求并发
         llm_semaphore, api_semaphore = get_global_semaphores()
 
         await self.initialize()
+
+        # 🚀 [新增] 启动后台独立的预后检索管线，不阻塞主流程！
+        prognosis_task = asyncio.create_task(self._run_prognosis_retrieval_track())
 
         while iteration < self.max_iterations:
             questions = await self._get_follow_up_questions(current_knowledge, query)
@@ -741,12 +906,9 @@ class AdvancedSearchSystem:
             self.questions_by_iteration[iteration] = questions
             logger.info(f"🚀 Iteration {iteration+1}: Concurrently processing {len(questions)} sub-questions...")
             
-            # 🛡️ 步骤 1：定义单个 Question 的【独立沙盒】并发流水线
             async def fetch_and_parse_question(q: str):
                 logger.info(f"🔍 [Task Started] {q}")
                 
-                # 🚀 极其致命的修复：为每个并发问题创建【独立实例】！
-                # 彻底断绝多个问题共享同一个 Executor 导致的“历史记录互相污染”！
                 local_selector = ToolSelector(
                     self.tool_planning_model,
                     self.reasoning_model,
@@ -770,7 +932,6 @@ class AdvancedSearchSystem:
                 if not t_calls:
                     return []
 
-                # 单引号转双引号补丁
                 for call in t_calls:
                     if 'tool_input' in call and 'query' in call['tool_input']:
                         raw_q = str(call['tool_input']['query'])
@@ -780,7 +941,6 @@ class AdvancedSearchSystem:
                     async with api_semaphore:
                         t_results = await local_executor.run(t_calls) or []
                         
-                    # 🚨 X光机：将并发结果导出，如果再报错，这里就是铁证！
                     try:
                         with open("API_RAW_OUTPUT_CONCURRENT.txt", "a", encoding="utf-8") as f:
                             f.write(f"\n{'='*60}\n🔍 并发检索词: {q}\n{'='*60}\n")
@@ -795,20 +955,17 @@ class AdvancedSearchSystem:
                 
                 return t_results
 
-            # ⚡ 并发发射所有查询！
             logger.info(f"⚡ 启动并发检索 (发射 {len(questions)} 个独立沙盒探索分支)...")
             all_questions_results = await asyncio.gather(
                 *(fetch_and_parse_question(q) for q in questions)
             )
 
-            # 🛡️ 步骤 2：串行合并结果，安全地进行字典写入
             unique_articles_dict = {}
             for tool_results in all_questions_results:
                 if not tool_results: continue
                 
                 for res in tool_results:
                     res_str = ""
-                    # 尝试内层解析
                     if isinstance(res, dict) and "content" in res:
                         raw_content = res["content"]
                         try:
@@ -821,10 +978,8 @@ class AdvancedSearchSystem:
                     else:
                         res_str = str(res)
                         
-                    # 🚀 致命修复：无脑暴力替换字面上的 \n 为真实换行，这步必须最先做！
                     res_str = res_str.replace('\\n', '\n')
                     
-                    # 暴力剥离可能存在的 MCP JSON 外壳
                     res_str = re.sub(r"^\[?\s*\{\s*['\"]type['\"]\s*:\s*['\"]text['\"]\s*,\s*['\"]text['\"]\s*:\s*['\"]", "", res_str)
                     res_str = re.sub(r"['\"]\s*\}\s*\]?$", "", res_str)
                         
@@ -871,9 +1026,6 @@ class AdvancedSearchSystem:
                                 "content": raw_text
                             }
 
-            # =========================================================================
-            # 🚀 机制 2.5：精准分流（带限流的并发提纯）
-            # =========================================================================
             keys_to_extract = []
             for url, art in unique_articles_dict.items():
                 if "clinicaltrials.gov" in url:
@@ -891,40 +1043,44 @@ class AdvancedSearchSystem:
                 logger.info(f"🧬 [Data Refinery] 对 {len(keys_to_extract)} 篇结构化数据启动受控并发提纯...")
                 await asyncio.gather(*(process_extraction_safely(u, t) for u, t in keys_to_extract))
 
-            # =========================================================================
-            # 🚀 机制 3：大模型“菜单点菜法”标题初筛
-            # =========================================================================
             articles_list = list(unique_articles_dict.values())
             selected_articles = []
             
             if len(articles_list) > 5:
-                logger.info(f"🔍 [Screening] 本轮发现 {len(articles_list)} 篇全新文献。启动大模型【标题初筛】机制...")
+                logger.info(f"🔍 [Screening] 启动大模型初筛机制，评估 {len(articles_list)} 篇文献/数据...")
                 
                 titles_catalog = ""
                 for idx, art in enumerate(articles_list):
-                    titles_catalog += f"[{idx}] {art['title']}\n"
+                    # 🚀 [核心修改]：在菜单中为 CT 和 FDA 打上强力高光标签！
+                    if "clinicaltrials.gov" in art["url"]:
+                        titles_catalog += f"[{idx}] 🏥 [专属结构化提纯 - 临床试验 NCT] {art['title']}\n"
+                    elif "fda.gov" in art["url"] or "nctr-crs.fda.gov" in art["url"]:
+                        titles_catalog += f"[{idx}] 💊 [专属结构化提纯 - FDA 药物数据] {art['title']}\n"
+                    else:
+                        titles_catalog += f"[{idx}] 📄 [PubMed 前沿文献] {art['title']}\n"
                 
                 screening_prompt = textwrap.dedent(f"""
                 你是一名顶尖的妇科肿瘤循证医学文献筛选专家。
-                我们为患者检索到了以下 {len(articles_list)} 篇候选文献。
-                为了防止信息过载，请你**仅仅根据标题**，挑选出最核心、最具有指导意义的 1 到 5 篇文献。
+                我们为患者检索并初步结构化了以下 {len(articles_list)} 篇候选文献/试验数据。
+                为了防止信息过载，请你挑选出最核心、最具有指导意义的 1 到 5 篇。
                 
                 【患者病情与检索背景】：
                 {self.treatment_context}
                 
-                【候选文献标题菜单】：
+                【候选数据菜单】：
                 {titles_catalog}
                 
-                【筛选红线】：
-                1. 优先重磅临床试验（PORTEC系列等）、大样本回顾性研究。
-                2. 优先本患者分子分型、合并症相关的长期随访文献。
-                3. 坚决剔除无关文献、普拉提/新生儿等垃圾匹配、基础动物实验。
+                【🚨 筛选红线（极度重要！）】：
+                1. **禁止“以貌取人”**：带有 [专属结构化提纯] 标签的 NCT 或 FDA 数据，虽然标题可能枯燥，但我们已经在后台将其提取为高价值的干预参数！你必须认真评估其与当前患者病情的匹配度，**若高度相关，请赋予其最高优先级入选**！
+                2. **严格防噪（宁缺毋滥）**：如果某项 NCT 试验或 PubMed 文献的入组人群（如分期、分子分型）与当前患者**明显不符**，即使它是重磅试验，也必须**果断剔除**！绝对不要为了凑数而选入不相关的数据！
+                3. 对于 [PubMed 前沿文献]，优先选择重磅临床试验（如 PORTEC 系列等）的大样本长期随访结果。
+                4. 坚决剔除垃圾匹配（如普拉提、骨科等无关领域）和基础动物实验。
                 
                 【强制输出格式】：
                 请严格输出一个 JSON 数组，包含你选中的文献编号（最多选5个！绝对不要输出除了 JSON 数组外的多余正文！）。
                 例如：[0, 2, 4]
                 
-                💡 请先在 <think> 标签内进行充分的医学甄别思考，确认无误后再在 <think> 标签外输出 JSON 数组！
+                💡 请先在 <think> 标签内进行充分的医学甄别思考，重点衡量各数据源的含金量与患者匹配度，确认无误后再输出 JSON 数组！
                 """)
                 
                 max_retries = 3
@@ -957,9 +1113,6 @@ class AdvancedSearchSystem:
                 
             logger.info(f"🔍 [Screening] 最终挑选了 {len(selected_articles)} 篇【最高价值】文献进入直通车。")
 
-            # =========================================================================
-            # 🚀 极致纯净直通车：拼接最纯净的医学事实
-            # =========================================================================
             chunk_evidence = f"\n\n### 第 {iteration + 1} 轮筛选出的核心医学证据：\n"
             
             for art in selected_articles:
@@ -981,11 +1134,15 @@ class AdvancedSearchSystem:
             )
             iteration += 1
 
+        # 🚀 [新增] 等待后台预后检索管线完成，并获取专属预后文献
+        prognosis_evidence = await prognosis_task
+
         final_report = ""
         if self.is_report:
             try:
+                # 🚀 [修改] 将 prognosis_evidence 传给详尽报告生成器
                 final_report_tuple = await self._generate_detailed_report(
-                    cumulative_raw_evidence, findings, query, iteration
+                    cumulative_raw_evidence, findings, query, iteration, prognosis_evidence
                 )
                 if isinstance(final_report_tuple, tuple):
                     final_report = final_report_tuple[1]
