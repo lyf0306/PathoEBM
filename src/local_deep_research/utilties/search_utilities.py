@@ -73,8 +73,12 @@ async def invoke_with_timeout_and_retry(llm, messages, timeout=90.0, max_retries
 
 
 def remove_think_tags(text: str) -> str:
-    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
-    return text
+    if not text:
+        return ""
+    cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    if "</think>" in cleaned:
+        cleaned = re.sub(r".*?</think>", "", cleaned, flags=re.DOTALL | re.IGNORECASE)
+    return cleaned.strip()
 
 
 def extract_links_from_search_results(search_results: list) -> list:
