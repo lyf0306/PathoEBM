@@ -98,10 +98,10 @@ def get_local_model(temperature: float = 0.1, request_timeout: float = 600.0):
     except ImportError:
         raise ImportError("Please install langchain_openai")
     return ChatOpenAI(
-        model="OriClinical", 
+        model="OriClinical",
         base_url="http://localhost:8000/v1",
-        api_key="EMPTY", 
+        api_key="EMPTY",
         temperature=temperature,
         max_tokens=16384,
-        request_timeout=request_timeout, # ✅ 允许传递超时时间
+        request_timeout=request_timeout,
     )

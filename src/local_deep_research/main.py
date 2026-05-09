@@ -992,10 +992,13 @@ async def extract_structured_task(
         logger.info("[Parser] 启动双流并行提取（合并症 | 肿瘤专科）...")
         _t_parallel_start = time.time()
 
-        all_conditions, oncology_result = await asyncio.gather(
+        alt_results = await asyncio.gather(
             _extract_comorbidities(patient_text, fast_llm),
             _extract_oncology(mdt_text, fast_llm),
+            return_exceptions=True,
         )
+        all_conditions = alt_results[0] if not isinstance(alt_results[0], BaseException) else {}
+        oncology_result = alt_results[1] if not isinstance(alt_results[1], BaseException) else {}
         _t_parallel_end = time.time()
         logger.info(f"[Parser] 双流并行完成 | 总耗时 {_t_parallel_end-_t_parallel_start:.1f}s")
 
@@ -1170,6 +1173,15 @@ async def run_evidence_update(treatment_context: str):
 
 async def main():
     """主程序入口"""
+    # 安装优雅关闭信号处理器（shutdown manager 内置了 HTTP 连接池清理）
+    try:
+        from .concurrency.shutdown import install_signal_handlers, get_shutdown_manager
+        install_signal_handlers()
+        shutdown_mgr = get_shutdown_manager()
+    except Exception as e:
+        logger.debug(f"无法安装信号处理器: {e}")
+        shutdown_mgr = None
+
     print("==================================================")
     print("   OriGene Clinical Evidence Validator (Auto-Hybrid)")
     print("==================================================")
@@ -1181,9 +1193,9 @@ async def main():
         print("Select Input Method:")
         print("1) Paste Treatment Plan Text (Markdown with References)")
         print("2) Load Plan from File (.txt/.md)")
-        
+
         choice = input("\nEnter number (1 or 2): ").strip()
-        
+
         if choice.lower() == 'quit':
             break
 
@@ -1206,13 +1218,20 @@ async def main():
         else:
             print("Invalid selection. Please enter 1 or 2.")
             continue
-        
+
         if not treatment_context.strip():
             print("❌ Empty context provided. Please try again.")
             continue
 
         # 执行核心任务
         await run_evidence_update(treatment_context)
+
+    # 优雅关闭：清理 HTTP 连接池
+    try:
+        from .concurrency.connection_pool import close_shared_http_client
+        await close_shared_http_client()
+    except Exception:
+        pass
 
 if __name__ == "__main__":
     try:

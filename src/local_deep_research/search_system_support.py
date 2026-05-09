@@ -343,7 +343,8 @@ async def compress_all_llm(model, parsed_list: List[Dict[str,Any]], limit=5, que
     sem = asyncio.Semaphore(limit)
     async def wrap(p):
         async with sem: return await compress_single_llm(model, p, query)
-    return await asyncio.gather(*(wrap(p) for p in parsed_list))
+    results = await asyncio.gather(*(wrap(p) for p in parsed_list), return_exceptions=True)
+    return [r for r in results if not isinstance(r, BaseException)]
 
 
 

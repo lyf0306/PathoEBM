@@ -205,25 +205,8 @@ def create_evaluation_data(
     return pd.DataFrame(matched_data)
 
 
-async def invoke_with_timeout_and_retry(
-    llm, messages, timeout=90.0, max_retries=3, retry_delay=60.0
-):
-    """async call LLM, with timeout and retry"""
-    for attempt in range(max_retries):
-        try:
-            response = await asyncio.wait_for(llm.ainvoke(messages), timeout=timeout)
-            return response
-        except asyncio.TimeoutError:
-            print(f"Attempt {attempt + 1}/{max_retries} timed out")
-            if attempt < max_retries - 1:
-                await asyncio.sleep(retry_delay)
-        except Exception as e:
-            print(f"Attempt {attempt + 1}/{max_retries} failed: {e}")
-            if attempt < max_retries - 1:
-                await asyncio.sleep(retry_delay)
-            else:
-                raise Exception(f"Failed after {max_retries} attempts: {e}")
-    raise Exception("Failed to get response after multiple attempts")
+# 使用统一的 retry 实现，避免重复维护
+from .utilties.search_utilities import invoke_with_timeout_and_retry
 
 
 async def evaluate_choice_question(question, correct_answer, user_answer, llm):
@@ -472,9 +455,8 @@ async def evaluate_questions(df, question_type, model_name, dataset_name, concur
         tasks = [evaluate_single_choice(row, i) for i, row in df.iterrows()]
 
        
-        results_with_index = await asyncio.gather(*tasks)
-
-        
+        raw_choice = await asyncio.gather(*tasks, return_exceptions=True)
+        results_with_index = [r for r in raw_choice if not isinstance(r, BaseException)]
         results_with_index.sort(key=lambda x: x[0])
         results = [result for _, result in results_with_index]
 
@@ -531,7 +513,8 @@ async def evaluate_questions(df, question_type, model_name, dataset_name, concur
 
         tasks = [evaluate_single_keyword(row, i) for i, row in df.iterrows()]
 
-        results_with_index = await asyncio.gather(*tasks)
+        raw_gather = await asyncio.gather(*tasks, return_exceptions=True)
+        results_with_index = [r for r in raw_gather if not isinstance(r, BaseException)]
 
         results_with_index.sort(key=lambda x: x[0])
         results = [result for _, result in results_with_index]

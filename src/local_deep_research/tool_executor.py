@@ -11,6 +11,21 @@ from .utilties.search_utilities import (
     write_log_process_safe, write_json_log_process_safe
 )
 
+
+def _classify_mcp_service(tool_name: str) -> str:
+    """根据工具名推断 MCP 后端服务，用于选择限流策略。"""
+    name = tool_name.lower()
+    if "pubmed" in name:
+        return "pubmed"
+    if "clinical" in name or "studies" in name or "trial" in name:
+        return "clinical"
+    if "fda" in name or "drug" in name:
+        return "fda"
+    if "ncbi" in name or "gene" in name:
+        return "ncbi"
+    return "default"
+
+
 class ToolExecutor:
     """
     Execute the tools according to the tool calling input.
@@ -23,8 +38,20 @@ class ToolExecutor:
         self.llm_light = llm_light
         
     async def execute_tool_with_timeout(self, tool_invoke_info, timeout=180.0, max_retries=3):
+        # 按下游服务限流
+        tool_name = tool_invoke_info.get("tool") or tool_invoke_info.get("tool_name", "")
+        service = _classify_mcp_service(tool_name)
+        rate_limiter = None
+        try:
+            from .concurrency.rate_limiter import get_rate_limiter
+            rate_limiter = await get_rate_limiter(service)
+        except Exception:
+            pass
+
         for attempt in range(max_retries):
             try:
+                if rate_limiter is not None:
+                    await rate_limiter.acquire()
                 tool_calling_result = await asyncio.wait_for(
                     self.execute_tool(tool_invoke_info),
                     timeout=timeout
@@ -149,7 +176,7 @@ class ToolExecutor:
                 "tool_name": tool_name,
                 "toolsuite": tool_source,
                 "tool_input": tool_input,  # <--- 【修改点 1】: 将 tool_input 传递下去，用于生成 URL
-                "success": self.judge_output_is_meaningful(result)
+                "success": await self.judge_output_is_meaningful(result)
             }
         except Exception as e:
             logging.error(f"Error building tool_calling_result: {e}")
@@ -241,7 +268,7 @@ class ToolExecutor:
 
         return tool_calling_result
     
-    def judge_output_is_meaningful(self, tool_response):
+    async def judge_output_is_meaningful(self, tool_response):
         if not isinstance(tool_response, str):
             try:
                 tool_response = str(tool_response)
@@ -266,7 +293,7 @@ Return data in python dict format as follows:
 }}
 """ 
         try:
-            response = self.llm_light.invoke(prompt) 
+            response = await self.llm_light.ainvoke(prompt)
             result = extract_and_convert_dict(response.content)
             
             if isinstance(result, dict) and "success" in result:
@@ -295,7 +322,17 @@ Return data in python dict format as follows:
             self.execute_tool_with_timeout(tool_invoke_info) for tool_invoke_info in tool_invoke_list
         ]
         
-        tool_calling_results = await asyncio.gather(*execute_tasks)
+        raw = await asyncio.gather(*execute_tasks, return_exceptions=True)
+        tool_calling_results = []
+        for item in raw:
+            if isinstance(item, BaseException):
+                logging.error(f"工具执行异常: {item}")
+                tool_calling_results.append({
+                    "content": f"Error: {item}", "tool_name": "Unknown",
+                    "toolsuite": None, "success": False,
+                })
+            else:
+                tool_calling_results.append(item)
         
         # Log failed tools
         self.log_execution_failed_tool(tool_invoke_list, tool_calling_results)

@@ -49,23 +49,50 @@ def write_json_log_process_safe(log_path, new_dict):
         
 
 
-async def invoke_with_timeout_and_retry(llm, messages, timeout=90.0, max_retries=3, retry_delay=60.0):
+async def invoke_with_timeout_and_retry(llm, messages, timeout=90.0, max_retries=3,
+                                        retry_delay=60.0, circuit_breaker=None):
+    """带超时、重试、熔断保护的 LLM 调用。
+
+    Args:
+        circuit_breaker: 可选 CircuitBreaker 实例；未传时自动使用 "llm" 熔断器。
+    """
+    if circuit_breaker is None:
+        from ..concurrency.circuit_breaker import get_circuit_breaker
+        circuit_breaker = get_circuit_breaker("llm")
+
     for attempt in range(max_retries):
         try:
+            # 熔断器快速失败检查
+            if circuit_breaker.is_open():
+                from ..concurrency.circuit_breaker import CircuitBreakerOpenError
+                raise CircuitBreakerOpenError(circuit_breaker.name)
+
             _t0 = time.time()
             response = await asyncio.wait_for(
                 llm.ainvoke(messages),
                 timeout=timeout
             )
             _elapsed = time.time() - _t0
+            circuit_breaker.record_success()
             logging.info(f"LLM invoke 成功 | attempt {attempt+1}/{max_retries} | 耗时 {_elapsed:.1f}s")
             return response
+
+        except asyncio.CancelledError:
+            logging.warning("LLM invoke 被取消 (CancelledError)")
+            raise
+
         except asyncio.TimeoutError:
+            circuit_breaker.record_failure()
             logging.warning(f"LLM invoke 超时 | attempt {attempt+1}/{max_retries} | timeout={timeout}s")
             if attempt < max_retries - 1:
                 logging.info(f"将在 {retry_delay}s 后重试...")
                 await asyncio.sleep(retry_delay)
+
         except Exception as e:
+            circuit_breaker.record_failure()
+            # 熔断器打开时直接抛出，不重试
+            if "CircuitBreakerOpenError" in type(e).__name__:
+                raise
             logging.warning(f"LLM invoke 失败 | attempt {attempt+1}/{max_retries} | {type(e).__name__}: {e}")
             if attempt < max_retries - 1:
                 logging.info(f"将在 {retry_delay}s 后重试...")
@@ -73,6 +100,7 @@ async def invoke_with_timeout_and_retry(llm, messages, timeout=90.0, max_retries
             else:
                 logging.error("已达最大重试次数，放弃。")
                 raise Exception(f"Failed after {max_retries} attempts: {e}")
+
     raise Exception("Failed to get a response after multiple attempts.")
 
 

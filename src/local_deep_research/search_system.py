@@ -92,6 +92,7 @@ from .utilties.search_utilities import (
 
 # --- New modular imports ---
 from .models.reference_pool import ReferencePool
+from .concurrency.backpressure import bounded_gather
 from .agents.followup_agent import FollowupAgent
 from .agents.prognosis_agent import PrognosisAgent
 from .agents.mdt_report_agent import MDTReportAgent
@@ -529,11 +530,22 @@ class AdvancedSearchSystem:
                         molecular_data=molecular_data,
                     ),
                     self._consolidate_trial_analysis(trial_analysis),
+                    return_exceptions=True,
                 ),
                 timeout=600.0
             )
             if timer := getattr(self, '_timer', None):
                 timer.lap("多智能体并发")
+            # 处理可能因 return_exceptions=True 产生的异常对象
+            if isinstance(followup_plan, BaseException):
+                logger.error(f"随访 Agent 异常: {followup_plan}")
+                followup_plan = "随访方案生成异常。"
+            if isinstance(prognosis_data, BaseException):
+                logger.error(f"预后 Agent 异常: {prognosis_data}")
+                prognosis_data = "预后数据提取异常。"
+            if isinstance(trial_analysis, BaseException):
+                logger.error(f"试验分析异常: {trial_analysis}")
+                trial_analysis = ""
             await context_bus.post("PrognosisAgent", "prognosis_data",
                                    prognosis_data)
         except Exception as e:
@@ -1008,16 +1020,19 @@ class AdvancedSearchSystem:
                     tasks.append(react_agent.execute(questions[i], max_rounds=2))
                     task_meta.append(("comorb", i))
 
-                all_questions_results = await asyncio.gather(*tasks)
+                all_questions_results = await bounded_gather(*tasks, concurrency=15, return_exceptions=True)
             else:
                 # ── Flat fallback (iteration > 0 or no trial grouping) ──
                 tasks = [react_agent.execute(q, max_rounds=2) for q in questions]
                 task_meta = [("flat", q) for q in questions]
-                all_questions_results = await asyncio.gather(*tasks)
+                all_questions_results = await bounded_gather(*tasks, concurrency=15, return_exceptions=True)
 
             # ── Logging ──
             for i, syn in enumerate(all_questions_results):
+                if isinstance(syn, BaseException):
+                    syn = f"[异常] {type(syn).__name__}: {syn}"
                 meta = task_meta[i] if i < len(task_meta) else ("unknown", "")
+                meta_type, meta_label = meta
                 meta_type, meta_label = meta
                 if meta_type == "trial":
                     desc = f"[Trial] {meta_label}"
@@ -2090,3 +2105,18 @@ class AdvancedSearchSystem:
         }
 
     # Note: _reindex_references is now delegated to ref_pool.reindex_references()
+
+    async def cleanup(self):
+        """释放异步资源：取消未完成任务、清理连接池。"""
+        logger.info("开始清理 AdvancedSearchSystem 资源...")
+        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        for task in tasks:
+            task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        try:
+            from .concurrency.connection_pool import close_shared_http_client
+            await close_shared_http_client()
+        except Exception:
+            pass
+        logger.info("AdvancedSearchSystem 资源清理完成。")

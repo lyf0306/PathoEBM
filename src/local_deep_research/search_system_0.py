@@ -469,7 +469,9 @@ class AdvancedSearchSystem:
                 return "随访方案生成失败，请参考指南常规随访。"
 
         logger.info("🤖 [Agent 1 & 1.5] 正在并发执行：生成试验深度解析 & 定制随访规划...")
-        trial_analysis, followup_plan = await asyncio.gather(_run_agent1_with_guardrail(), _run_agent15())
+        results = await asyncio.gather(_run_agent1_with_guardrail(), _run_agent15(), return_exceptions=True)
+        trial_analysis = results[0] if not isinstance(results[0], BaseException) else "临床试验数据解析生成失败，请查阅原始文献。"
+        followup_plan = results[1] if not isinstance(results[1], BaseException) else "随访方案生成失败，请参考指南常规随访。"
 
         # =====================================================================
         # 🤖 智能体 2：子宫内膜癌 MDT 首席主笔 (内置妇瘤专科药理学智慧)
@@ -686,13 +688,16 @@ class AdvancedSearchSystem:
                 
                 if tool_results:
                     try:
-                        parsed_list = await asyncio.gather(
-                            *(parse_single(res, query=question) for res in tool_results)
+                        parsed_list_raw = await asyncio.gather(
+                            *(parse_single(res, query=question) for res in tool_results),
+                            return_exceptions=True
                         )
-                        compressed = await compress_all_llm(
-                            self.fast_model, parsed_list, limit=3, query=query
-                        )
-                        fullquery_tool_results.extend(compressed)
+                        parsed_list = [p for p in parsed_list_raw if not isinstance(p, BaseException)]
+                        if parsed_list:
+                            compressed = await compress_all_llm(
+                                self.fast_model, parsed_list, limit=3, query=query
+                            )
+                            fullquery_tool_results.extend(compressed)
                     except Exception as e:
                         logger.warning(f"Error parsing tool results: {e}")
 
