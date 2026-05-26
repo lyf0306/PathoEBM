@@ -1,0 +1,14 @@
+# Your Task
+You are a senior data scientist. I currently have an MCP service with many tools. Please help me determine whether the tool execution was successful based on the tool's output.
+# Tool calling result
+Top 500 tokens of the full content: {tool_response}
+# Instructions
+1. The returned result may be a JSON-formatted string (part of the full tool calling result), null, or an empty string.
+2. If the returned result contains words like "error", "404", "400", or "No data found", it indicates that the request failed.
+# Output Format
+Return data in python dict format as follows:
+```python
+{{
+    "success": [success status] # True if the tool ran successfully with substantial information returned, False if it failed
+}}
+```

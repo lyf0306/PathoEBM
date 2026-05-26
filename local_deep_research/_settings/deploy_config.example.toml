@@ -1,0 +1,61 @@
+# ============================================================
+# PathoEBM 部署配置文件
+# 迁移 / 部署到新环境时只需修改此文件
+# ============================================================
+
+# ---- API 服务器 ----
+[server]
+host = "0.0.0.0"
+port = 8000
+max_concurrent_jobs = 5
+# API 鉴权密钥（留空则不启用认证）
+api_key = ""
+
+# ---- 任务输出存储 ----
+[storage]
+jobs_dir = "jobs_output"
+retention_days = 30
+cleanup_interval_seconds = 600
+
+# ---- 模型策略 ----
+[model]
+# primary  = 首选外部模型（"deepseek" | "gpt"）
+# fallback = 外部模型不可用时的回退方案（"local" | "none"）
+primary = "deepseek"
+fallback = "local"
+
+# ---- DeepSeek API ----
+[deepseek]
+api_base = "https://api.deepseek.com"
+api_key = "YOUR_DEEPSEEK_API_KEY_HERE"
+
+# ---- OpenAI API（GPT-4.1） ----
+[openai]
+api_base = "https://api.openai.com/v1"
+api_key = "EMPTY_KEY"
+
+# ---- 本地 vLLM 模型 ----
+[local]
+host = "http://localhost"
+port = 8000
+model_name = "OriClinical"
+max_tokens = 16384
+request_timeout = 600.0
+
+# ---- Embedding 服务 ----
+[embedding]
+api_key = "EMPTY_KEY"
+cache = "embedding_cache.pkl"
+
+# ---- MCP 工具服务器 ----
+[mcp]
+server_url = "http://localhost:8788"
+
+# ---- 提示词版本 ----
+[prompts]
+version = "v1"
+
+# ---- 模板 Embedding（可选） ----
+[template]
+api_base = ""
+api_key = "EMPTY_KEY"

@@ -1,0 +1,23 @@
+## Task: Evidence Synthesis
+
+Validating clinical plan using **OFFICIAL API DATA** (PubMed/FDA/CT.gov).
+
+## Verified API Data
+{current_knowledge}
+
+## Sources
+{refs_block}
+
+## Instructions
+1. **Validate**: Does 2024-Present evidence support the focus areas?
+2. **Update**: Identify newer trials/approvals.
+3. **Detail**: Note specific regimens (Drug/Dose) found in evidence.
+
+## Output Template
+## Evidence Status
+- **Decision Point**: [e.g. Adjuvant Therapy]
+  - **Status**: [✅ Supported / ⚠️ Controversy / ❓ No Data]
+  - **Key Evidence**: [Summarize findings from PubMed/CT.gov [^^n]]
+
+## Missing Data
+[What couldn't be verified?]

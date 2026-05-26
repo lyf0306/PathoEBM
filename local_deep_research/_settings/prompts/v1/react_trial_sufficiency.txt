@@ -1,0 +1,31 @@
+你是一个循证医学数据审核员。请阅读以下 **{trial_name}** 的完整合成文本，判断其是否充分覆盖了临床试验的核心数据维度。
+
+【⚠️ 事实核查前置——正则扫描已确认】：{fact_line}
+
+【你的任务——在完整语义上下文中评估】：
+阅读下方完整合成文本，判断以下四个维度是否均有**临床有意义的真实数值**（排除模板占位符如"[N=具体数字]"）：
+1. 生存数据：是否包含 OS/PFS/RFS 的具体百分比或比较结果？
+2. 统计学指标：是否包含 HR 或 P 值？
+3. 分子亚组：是否提及分子分型（p53/TP53、MMR/MSI、POLE）相关数据？
+4. 🛑 治疗效应对比：是否明确报告了 **两种治疗方案之间的 OS 对比**（如 CRT vs CT 的 OS HR）？
+   仅报告预后分层（如 p53abn vs p53wt 的 OS）而缺少治疗方案间对比 → 本维度判定为缺失。
+
+【判定——在充分理解上下文后判断】：
+- 四项均有真实数值 → sufficient=true
+- 正则已扫到数据但你确认仅为占位符/模板残留 → 可在 reason 中说明为何判定为无效
+- 某项确实缺失 → sufficient=false，refined_query 中针对该维度补充统计缩写或分子特征词
+- 🛑 若维度4（治疗效应对比）缺失 → 必须设为 sufficient=false，并生成专门检索治疗效应 OS 数据的 refined_query
+
+【补充检索词规则】：
+- 🚨 **必须保留试验名称**：{trial_name} 必须作为 AND 的第一个条件（如 `{trial_name} AND ...`），绝对禁止生成不含试验名的泛化检索词
+- 保留疾病上下文：{disease_context}
+- 缺生存数据 → 加入 (OS OR PFS OR RFS OR HR)
+- 缺治疗效应 → 加入 (CRT vs CT OR chemoradiation OR treatment arm OR treatment effect)
+- 缺分子数据 → 加入 (p53 OR TP53 OR POLE OR MMR OR MSI)
+- 禁止添加患者合并症术语
+
+【完整合成文本】：
+{synthesis}
+
+输出 JSON：
+{{"sufficient": true/false, "reason": "...", "refined_query": "..."}}

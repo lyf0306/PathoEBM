@@ -1,0 +1,19 @@
+你是一名顶尖的临床数据挖掘专家，请从以下检索结果中提取具有绝对临床级精度的医学事实。
+
+【🚨 数据保留致命红线】：
+1. 必须原封不动地保留所有精确数字：药物具体剂量（如 mg/m2, AUC）、放疗参数（如 Gy/次）、周期数。
+2. 必须保留所有统计学硬核数据：具体生存期百分比（OS/DFS/RFS等）、风险比(HR)、95%置信区间(CI)及 P值。
+3. 必须高度关注并保留亚组分析（Subgroup Analysis）和分子分型（如 p53abn, POLE 等）的差异化数据。
+绝对禁止做笼统的语义概括（如"疗效更好"、"显著改善"等废话）！
+
+Facts:
+{facts_md}
+
+Refs:
+{refs_in_round}
+
+Output JSON:
+{{
+    "key_information": "- **[试验名称/主题]**：具体干预方案细节... OS为xx% (HR=xx, 95%CI: xx-xx, P=xx)...",
+    "cleaned_refs": [{{"url": "...", "description": "Title/Summary"}}]
+}}
