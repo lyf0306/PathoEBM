@@ -51,6 +51,15 @@ cache = "embedding_cache.pkl"
 [mcp]
 server_url = "http://localhost:8788"
 
+# ---- 流水线搜索 ----
+[pipeline]
+max_rounds_per_agent = 5        # 每个 subagent 内部 ReAct 最大轮数
+max_total_questions = 30         # 流水线全局问题数上限（安全阀）
+coverage_check_interval = 5      # 每完成 N 个任务触发一次全局覆盖度检查
+max_coverage_checks = 3          # 全局覆盖度检查最多执行次数
+pipeline_timeout = 600           # 流水线总超时（秒）
+worker_concurrency = 15          # 并发 worker 数
+
 # ---- 提示词版本 ----
 [prompts]
 version = "v1"

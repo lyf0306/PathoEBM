@@ -3,7 +3,7 @@ import asyncio
 import logging
 import re
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from ..prompts import prompt_manager
 
@@ -68,7 +68,7 @@ class ReActSearchAgent:
     # Public API
     # -----------------------------------------------------------------
 
-    async def execute(self, query: str, max_rounds: int = MAX_ROUNDS) -> str:
+    async def execute(self, query: str, max_rounds: int = MAX_ROUNDS) -> dict:
         """
         Full ReAct cycle with synthesis-gated refinement.
 
@@ -83,11 +83,16 @@ class ReActSearchAgent:
             max_rounds: Maximum ReAct iterations (default 3; pass 8 for core trials).
 
         Returns:
-            Synthesized analysis text with [^^n] citations, or empty string.
+            dict with:
+              - synthesis (str): analysis text with [^^n] citations
+              - sufficient (bool): whether evidence fully answers the query
+              - follow_up_queries (list[str]): refined queries to inject into
+                the async pipeline when max_rounds is exhausted
         """
         logger.info(f"[Task Started] {query}")
         all_results = []
         current_query = query
+        last_refined_query = ""
 
         self._current_query = query
         self._current_query_type = "flat"
@@ -112,7 +117,7 @@ class ReActSearchAgent:
                         current_query = relaxed
                         round_boundary.error = None  # not a failure, just relaxation
                         continue
-                    return ""
+                    return {"synthesis": "", "sufficient": False, "follow_up_queries": []}
 
                 # Step 2: Register refs from all accumulated results
                 ref_map = self._register_refs(all_results)
@@ -123,25 +128,46 @@ class ReActSearchAgent:
                 # Step 3b: Strip any [^^n] citations that don't exist in ref_map
                 synthesis = self._validate_citations(synthesis, ref_map)
 
-                # Step 4: On last round, return (regardless of sufficiency)
-                if round_idx >= max_rounds - 1:
-                    return synthesis or ""
-
-                # Step 5: Check if synthesis sufficiently answers the original query
+                # Step 4: Check sufficiency (always, even on last round —
+                #         so the pipeline gets follow_up_queries when needed)
                 verdict = await self._check_sufficiency(query, synthesis)
                 if verdict.get("sufficient", False):
                     logger.info(f"  -> 检索结果已充分，无需补充")
-                    return synthesis
+                    return {"synthesis": synthesis or "", "sufficient": True, "follow_up_queries": []}
 
                 reason = verdict.get("reason", "").strip()
                 refined = verdict.get("refined_query", "").strip()
+
+                # Step 5: Not sufficient — either continue or return follow-ups
+                if round_idx >= max_rounds - 1:
+                    # Dead-end detection: if no quantitative data after all rounds,
+                    # there is genuinely no evidence — don't keep generating follow-ups
+                    scan = self._scan_quantitative(synthesis)
+                    if scan["pct"] == 0 and scan["hr"] == 0 and scan["pval"] == 0 \
+                            and scan["mol"] == 0 and scan["tx_effect"] == 0:
+                        logger.info(
+                            "  -> 所有轮次均无定量数据，判定为无可用证据，停止跟进"
+                        )
+                        return {
+                            "synthesis": synthesis or "",
+                            "sufficient": True,
+                            "follow_up_queries": [],
+                        }
+                    follow_ups = [refined] if refined else []
+                    logger.info(
+                        f"  -> 最后一轮仍未充分，返回 %d 个跟进查询",
+                        len(follow_ups),
+                    )
+                    return {"synthesis": synthesis or "", "sufficient": False, "follow_up_queries": follow_ups}
+
                 logger.info(f"  -> 证据不充分。原因: {reason[:120]}")
                 if not refined:
                     logger.info(f"  -> 无补充检索词，停止。")
-                    return synthesis
+                    return {"synthesis": synthesis, "sufficient": False, "follow_up_queries": []}
 
                 logger.info(f"  -> 补充检索: {refined[:80]}...")
                 current_query = refined
+                last_refined_query = refined
 
             # If ErrorBoundary caught an error, return whatever we have from previous rounds
             if round_boundary.error:
@@ -152,18 +178,19 @@ class ReActSearchAgent:
                 if all_results:
                     ref_map = self._register_refs(all_results)
                     try:
-                        return await self._synthesize(query, all_results, ref_map)
+                        synthesis = await self._synthesize(query, all_results, ref_map)
+                        return {"synthesis": synthesis, "sufficient": False, "follow_up_queries": []}
                     except Exception:
-                        return ""
-                return ""
+                        return {"synthesis": "", "sufficient": False, "follow_up_queries": []}
+                return {"synthesis": "", "sufficient": False, "follow_up_queries": []}
 
-        return ""  # unreachable
+        return {"synthesis": "", "sufficient": False, "follow_up_queries": []}
 
     # -----------------------------------------------------------------
     # Trial-level ReAct: unified loop across multiple sub-queries
     # -----------------------------------------------------------------
 
-    async def execute_trial(self, trial_name: str, sub_queries: list[str], max_rounds: int = MAX_ROUNDS) -> str:
+    async def execute_trial(self, trial_name: str, sub_queries: list[str], max_rounds: int = MAX_ROUNDS) -> dict:
         """
         Trial-level ReAct loop. Unlike execute() which handles one isolated query,
         this method takes multiple sub_queries targeting different dimensions of
@@ -177,10 +204,10 @@ class ReActSearchAgent:
           - The final synthesis is a unified trial-level evidence summary
 
         Returns:
-            Unified synthesis covering all trial dimensions, or empty string.
+            dict with synthesis, sufficient, and follow_up_queries (see execute()).
         """
         if not sub_queries:
-            return ""
+            return {"synthesis": "", "sufficient": True, "follow_up_queries": []}
 
         logger.info(f"[Trial: {trial_name}] 启动多维度 ReAct 循环（{len(sub_queries)} 个子检索词）")
         all_results = []
@@ -208,7 +235,7 @@ class ReActSearchAgent:
                     self._relaxed_query = relaxed
                     current_query = relaxed
                     continue
-                return ""
+                return {"synthesis": "", "sufficient": False, "follow_up_queries": []}
 
             # Step 3: Register refs
             ref_map = self._register_refs(all_results)
@@ -218,20 +245,47 @@ class ReActSearchAgent:
             synthesis = await self._synthesize(combined_ctx, all_results, ref_map)
             synthesis = self._validate_citations(synthesis, ref_map)
 
-            # Step 5: On last round, return
-            if round_idx >= max_rounds - 1:
-                return synthesis or ""
-
-            # Step 6: Trial-level sufficiency check (across ALL dimensions)
+            # Step 5: Trial-level sufficiency check (ALWAYS — even on last round)
             verdict = await self._check_trial_sufficiency(trial_name, sub_queries, synthesis)
             if verdict.get("sufficient", False):
                 logger.info(f"  [{trial_name}] 所有维度均已覆盖，无需补充")
-                return synthesis
+                return {"synthesis": synthesis or "", "sufficient": True, "follow_up_queries": []}
 
             reason = verdict.get("reason", "").strip()
             logger.info(f"  [{trial_name}] 维度不完整: {reason[:120]}")
 
-            # Step 7: Determine next query
+            # Step 6: On last round, return with follow-ups for pipeline
+            if round_idx >= max_rounds - 1:
+                # Dead-end detection: no quantitative data → genuinely no evidence
+                scan = self._scan_quantitative(synthesis)
+                if scan["pct"] == 0 and scan["hr"] == 0 and scan["pval"] == 0 \
+                        and scan["mol"] == 0 and scan["tx_effect"] == 0:
+                    logger.info(
+                        "  [%s] 所有轮次均无定量数据，判定为无可用证据，停止跟进",
+                        trial_name,
+                    )
+                    return {
+                        "synthesis": synthesis or "",
+                        "sufficient": True,
+                        "follow_up_queries": [],
+                    }
+                follow_ups = []
+                # Unused sub-queries become pipeline follow-ups
+                for i in range(sq_index + 1, len(sub_queries)):
+                    follow_ups.append(sub_queries[i])
+                # Plus any LLM refined_query
+                refined = verdict.get("refined_query", "").strip()
+                if refined:
+                    if trial_name.lower() not in refined.lower():
+                        refined = f"{trial_name} AND {refined}"
+                    follow_ups.append(refined)
+                logger.info(
+                    f"  [{trial_name}] 最后一轮仍未充分，返回 %d 个跟进查询",
+                    len(follow_ups),
+                )
+                return {"synthesis": synthesis or "", "sufficient": False, "follow_up_queries": follow_ups}
+
+            # Step 7: Determine next query for this loop
             # Priority: unused sub_query → LLM refined_query → stop
             next_sq_index = sq_index + 1
             if next_sq_index < len(sub_queries):
@@ -261,9 +315,9 @@ class ReActSearchAgent:
                     current_query = refined
                 else:
                     logger.info(f"  [{trial_name}] 无补充检索方向，停止。")
-                    return synthesis
+                    return {"synthesis": synthesis, "sufficient": False, "follow_up_queries": []}
 
-        return ""
+        return {"synthesis": "", "sufficient": False, "follow_up_queries": []}
 
     # -----------------------------------------------------------------
     # Synthesis-gated sufficiency check (replaces old raw-summary-based refine)
@@ -651,6 +705,62 @@ class ReActSearchAgent:
                 yield url, title
 
     # -----------------------------------------------------------------
+    # CEBM evidence level extraction
+    # -----------------------------------------------------------------
+
+    # Regex: matches "CEBM 1b" embedded in the study type line or legacy format.
+    # New format: "**研究类型：**... | CEBM 1b"
+    # Legacy format: "- CEBM 证据等级：1b ..."
+    _CEBM_LINE_RE = re.compile(
+        r'CEBM\s+(1a|1b|2a|2b|3a|3b|4|5|NR)\b', re.IGNORECASE
+    )
+    # Regex: matches #### Title [^^n] headers (only within synthesized output)
+    _CITE_HEADER_RE = re.compile(r'^####\s+.+?\s*\[\^\^(\d+)\]', re.MULTILINE)
+
+    def _extract_and_store_cebm(self, synthesis: str) -> None:
+        """
+        Extract CEBM evidence levels from synthesis output and persist them
+        into ReferencePool entries keyed by their [^^n] citation IDs.
+
+        Parses blocks like:
+            #### PORTEC-3 Adjuvant CRT vs RT [^^5]
+            ...
+            - CEBM 证据等级：1b III 期 RCT
+            ...
+        """
+        if not synthesis or not self.ref_pool:
+            return
+
+        # Split synthesis into per-paper blocks based on #### headers
+        blocks = re.split(r'\n(?=####\s)', synthesis)
+        updated = 0
+
+        for block in blocks:
+            # Extract citation ID from header
+            cite_match = self._CITE_HEADER_RE.search(block)
+            if not cite_match:
+                continue
+            cite_id = int(cite_match.group(1))
+
+            # Extract CEBM level from the block
+            cebm_match = self._CEBM_LINE_RE.search(block)
+            if not cebm_match:
+                continue
+            level = cebm_match.group(1).upper()  # normalize: "1b" stays, "nr" → "NR"
+
+            if level == "NR":
+                continue
+
+            if self.ref_pool.update_cebm_level(cite_id, level):
+                updated += 1
+                logger.debug(
+                    f"  📊 [CEBM] ref [^^{cite_id}] → {level}"
+                )
+
+        if updated:
+            logger.info(f"  📊 [CEBM] 从合成结果中提取了 {updated} 条证据等级")
+
+    # -----------------------------------------------------------------
     # Evidence synthesis
     # -----------------------------------------------------------------
 
@@ -714,7 +824,10 @@ class ReActSearchAgent:
             raw = self._dedup_synthesis(raw)
             raw = self._strip_confidence_tags(raw)
             raw = self._normalize_markdown_format(raw)
-            return await self._ensure_chinese(raw, query)
+            raw = await self._ensure_chinese(raw, query)
+            raw = self._trim_visible_refs(raw, max_refs=3)
+            self._extract_and_store_cebm(raw)
+            return raw
         except asyncio.CancelledError:
             raise
         except Exception as e:
@@ -785,6 +898,84 @@ class ReActSearchAgent:
         cleaned = re.sub(r' {2,}', ' ', cleaned)
         cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
         return cleaned.strip()
+
+    @staticmethod
+    def _limit_references(text: str, max_refs: int = 3) -> str:
+        """Keep at most *max_refs* unique [^^n] references, dropping excess ones.
+
+        References are kept in order of first appearance.  If the text cites
+        [^^1], [^^3], [^^5], [^^2], [^^7] → only [^^1], [^^3], [^^5] survive;
+        [^^2] and [^^7] are stripped.
+        """
+        if not text:
+            return text
+
+        import re as _re
+        refs = _re.findall(r'\[\^\^(\d+)\]', text)
+        if not refs:
+            return text
+
+        seen: list[str] = []
+        for n in refs:
+            if n not in seen:
+                seen.append(n)
+        if len(seen) <= max_refs:
+            return text
+
+        keep = set(seen[:max_refs])
+        drop = set(seen[max_refs:])
+
+        def _replace_dropped(m: _re.Match) -> str:
+            return m.group(0) if m.group(1) in keep else ""
+
+        text = _re.sub(r'\[\^\^(\d+)\]', _replace_dropped, text)
+
+        # Clean up artifacts: empty bullet points, orphaned commas, double spaces
+        text = _re.sub(r'^\s*[-*]\s*$\n?', '', text, flags=_re.MULTILINE)
+        text = _re.sub(r',\s*,', ',', text)
+        text = _re.sub(r'  +', ' ', text)
+        text = _re.sub(r'\n{3,}', '\n\n', text)
+        return text.strip()
+
+    @staticmethod
+    def _trim_visible_refs(text: str, max_refs: int = 3) -> str:
+        """Limit visible [^^n] citations to *max_refs* in body text.
+
+        Strategy:
+          1. Collect all unique [^^n] IDs in order of first appearance.
+          2. If ≤ max_refs, return text unchanged.
+          3. If > max_refs, keep only the first max_refs IDs in the visible body.
+          4. Append ALL unique IDs as an HTML comment so reindex_references()
+             can still find them and include them in the final reference list.
+
+        The HTML comment is stripped by report_orchestrator after reindexing.
+        """
+        if not text:
+            return text
+
+        refs = re.findall(r'\[\^\^(\d+)\]', text)
+        unique_refs: list[str] = list(dict.fromkeys(refs))
+        if len(unique_refs) <= max_refs:
+            return text
+
+        keep = set(unique_refs[:max_refs])
+
+        def _replace_dropped(m):
+            return m.group(0) if m.group(1) in keep else ""
+
+        text = re.sub(r'\[\^\^(\d+)\]', _replace_dropped, text)
+
+        # Clean up artifacts from stripped citations
+        text = re.sub(r'^\s*[-*]\s*$\n?', '', text, flags=re.MULTILINE)
+        text = re.sub(r',\s*,', ',', text)
+        text = re.sub(r'  +', ' ', text)
+        text = re.sub(r'\n{3,}', '\n\n', text)
+
+        # Append ALL unique ref IDs as hidden anchor for reindex_references()
+        ref_anchor = ' '.join(f'[^^{rid}]' for rid in unique_refs)
+        text = text.strip() + f'\n\n<!-- ref_anchor: {ref_anchor} -->'
+
+        return text
 
     @staticmethod
     def _normalize_markdown_format(text: str) -> str:

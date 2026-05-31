@@ -82,10 +82,26 @@ import json, re, html
 from typing import Any, Dict, List, Tuple
 
 
+# CEBM 证据等级常量
+# Oxford Centre for Evidence-Based Medicine 2011 Levels of Evidence
+# 用于标注每篇引用文献的证据强度，供临床医生自行判断采信程度
+CEBM_LEVEL_DESCRIPTIONS: dict[str, str] = {
+    "1a": "同质 RCT 的系统综述 (SR/MA of RCTs)",
+    "1b": "单个 RCT (窄置信区间)",
+    "2a": "同质队列研究的系统综述 (SR of cohort studies)",
+    "2b": "单个队列研究 / 低质量 RCT",
+    "3a": "同质病例对照研究的系统综述",
+    "3b": "单个病例对照研究",
+    "4":  "病例系列 / 病例报告",
+    "5":  "专家意见 / 机制推理 / 临床前研究",
+}
+
+
 class SourcesReference(BaseModel):
     title: str = Field(description="title")
     subtitle: str = Field("", description="subtitle")
     link: str = Field("", description="link")
+    cebm_level: str = Field("", description="CEBM evidence level: 1a/1b/2a/2b/3a/3b/4/5")
 
 def _to_str(x: Any) -> str:
     if x is None:

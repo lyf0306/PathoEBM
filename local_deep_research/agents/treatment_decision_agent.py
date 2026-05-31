@@ -269,6 +269,25 @@ class TreatmentDecisionAgent:
     # Phase 1 output consistency check — 放疗结论 vs 最终核心方案 must agree
     # -----------------------------------------------------------------
     @staticmethod
+    def _has_rt_keyword(text: str) -> bool:
+        """Check if text contains RT keywords that are NOT negated.
+
+        E.g. "不进行任何辅助放疗或化疗" contains "放疗" but it's negated
+        → returns False.  "推荐盆腔EBRT" → returns True.
+        """
+        import re as _re
+        rt_kw = ["EBRT", "VBT", "放疗", "\\bRT\\b", "IMRT", "VMAT"]
+        negation_words = ["不", "无需", "免除", "无", "未", "非", "没有", "避免", "omit", "without", "no "]
+        neg_pattern = "(?:" + "|".join(negation_words) + ")"
+        for kw in rt_kw:
+            for m in _re.finditer(kw, text, _re.IGNORECASE):
+                # Look back up to 15 chars before this match for negation
+                prefix = text[max(0, m.start() - 15):m.start()]
+                if not _re.search(neg_pattern, prefix, _re.IGNORECASE):
+                    return True
+        return False
+
+    @staticmethod
     def _check_decision_consistency(decision_text: str) -> str:
         """
         Check that 放疗结论 and 最终核心方案 in Phase 1 output don't contradict.
@@ -289,7 +308,7 @@ class TreatmentDecisionAgent:
             return ""
 
         rt_omit = any(kw in rt_decision for kw in ["免除放疗", "免除", "不推荐放疗", "omit", "不推荐"])
-        plan_has_rt = any(kw in final_plan.upper() for kw in ["EBRT", "VBT", "放疗", "RT", "IMRT", "VMAT"])
+        plan_has_rt = TreatmentDecisionAgent._has_rt_keyword(final_plan)
 
         if rt_omit and plan_has_rt:
             return f"放疗结论=免除, 但最终核心方案含放疗组分: {final_plan[:80]}"

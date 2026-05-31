@@ -3,6 +3,7 @@ import re
 import asyncio
 import fcntl
 import json
+import random
 import time
 from ..prompts import prompt_manager
 
@@ -86,8 +87,10 @@ async def invoke_with_timeout_and_retry(llm, messages, timeout=90.0, max_retries
             circuit_breaker.record_failure()
             logging.warning(f"LLM invoke 超时 | attempt {attempt+1}/{max_retries} | timeout={timeout}s")
             if attempt < max_retries - 1:
-                logging.info(f"将在 {retry_delay}s 后重试...")
-                await asyncio.sleep(retry_delay)
+                jitter = random.uniform(-15, 15)
+                delay = max(30, min(90, retry_delay + jitter))
+                logging.info(f"将在 {delay:.0f}s 后重试...")
+                await asyncio.sleep(delay)
 
         except Exception as e:
             circuit_breaker.record_failure()
@@ -96,8 +99,10 @@ async def invoke_with_timeout_and_retry(llm, messages, timeout=90.0, max_retries
                 raise
             logging.warning(f"LLM invoke 失败 | attempt {attempt+1}/{max_retries} | {type(e).__name__}: {e}")
             if attempt < max_retries - 1:
-                logging.info(f"将在 {retry_delay}s 后重试...")
-                await asyncio.sleep(retry_delay)
+                jitter = random.uniform(-15, 15)
+                delay = max(30, min(90, retry_delay + jitter))
+                logging.info(f"将在 {delay:.0f}s 后重试...")
+                await asyncio.sleep(delay)
             else:
                 logging.error("已达最大重试次数，放弃。")
                 raise Exception(f"Failed after {max_retries} attempts: {e}")

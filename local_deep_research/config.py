@@ -28,11 +28,32 @@ else:
 def get_secret(section, key, default=""):
     return secrets.get(section, {}).get(key, default)
 
+def _default_llm_concurrency() -> int:
+    """根据模型提供方返回默认 LLM 并发数。
+
+    外部 API（DeepSeek 等）：500（官方并发限制）
+    本地 vLLM：8（受 GPU 显存/批处理限制）
+    """
+    provider = get_secret("model", "primary", "deepseek")
+    if provider == "local":
+        return 8
+    return 100  # deepseek, gpt 等外部 API 默认 100
+
 settings = SimpleNamespace(
     quick    = SimpleNamespace(iteration=2, questions_per_iteration=4),
     detailed = SimpleNamespace(iteration=2, questions_per_iteration=6),
     embedding_api_key = get_secret("embedding", "api_key", "EMPTY_KEY"),
     embedding_cache   = get_secret("embedding", "cache", "embedding_cache.pkl"),
+    pipeline = SimpleNamespace(
+        max_rounds_per_agent   = int(get_secret("pipeline", "max_rounds_per_agent", "5")),
+        max_total_questions    = int(get_secret("pipeline", "max_total_questions", "30")),
+        coverage_check_interval = int(get_secret("pipeline", "coverage_check_interval", "5")),
+        max_coverage_checks    = int(get_secret("pipeline", "max_coverage_checks", "3")),
+        pipeline_timeout       = int(get_secret("pipeline", "pipeline_timeout", "600")),
+        worker_concurrency     = int(get_secret("pipeline", "worker_concurrency", "15")),
+        llm_concurrency        = int(get_secret("pipeline", "llm_concurrency", str(_default_llm_concurrency()))),
+        api_concurrency        = int(get_secret("pipeline", "api_concurrency", "10")),
+    ),
 )
 
 endpoint_openai_api_base_url   = get_secret("openai", "api_base", "https://api.openai.com/v1")

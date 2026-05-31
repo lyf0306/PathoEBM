@@ -1,3 +1,5 @@
+import asyncio
+import random
 from typing import Any
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_mcp_adapters.tools import load_mcp_tools
@@ -43,12 +45,23 @@ class OrigeneMCPToolClient:
             except Exception as e:
                 print(f"⚠️ Warning: Could not pre-fetch metadata for {pkg_name}: {e}")
 
-        # 获取所有工具
-        try:
-            self.mcp_tools = await client.get_tools()
-        except Exception as e:
-            print(f"❌ Critical: Failed to get tools from MCP client: {e}")
-            raise e
+        # 获取所有工具（带重试，应对网络抖动导致的启动失败）
+        max_retries = 3
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                self.mcp_tools = await client.get_tools()
+                break
+            except Exception as e:
+                last_error = e
+                if attempt < max_retries - 1:
+                    delay = (2 ** attempt) + random.uniform(0, 2)
+                    print(f"⚠️ MCP 工具列表获取失败 (attempt {attempt+1}/{max_retries}): {e}")
+                    print(f"   将在 {delay:.1f}s 后重试...")
+                    await asyncio.sleep(delay)
+                else:
+                    print(f"❌ Critical: Failed to get tools from MCP client after {max_retries} attempts: {e}")
+                    raise e
 
         # 更新 tool2source 映射 (基于实际获取到的工具)
         # 注意：这里简化了逻辑，因为 MultiServerMCPClient 会自动聚合

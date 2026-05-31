@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+import random
 import urllib.parse
 from datetime import datetime
 from langchain_openai import ChatOpenAI
@@ -63,13 +64,17 @@ class ToolExecutor:
                 log_msg = f"[{datetime.now().isoformat()}] Attempt {attempt + 1}/{max_retries} timed out when executing tool after {timeout}s. Tool_invoke_info: {tool_invoke_info}"
                 write_log_process_safe(self.error_log_path, log_msg)
                 if attempt < max_retries - 1:
-                    print(f"Retrying {attempt + 1}/{max_retries}...")
+                    delay = (2 ** attempt) + random.uniform(0, 1)
+                    print(f"Retrying {attempt + 2}/{max_retries} in {delay:.1f}s...")
+                    await asyncio.sleep(delay)
             except Exception as e:
                 print(f"Attempt {attempt + 1}/{max_retries} failed when executing tool with error: {e}")
                 log_msg = f"[{datetime.now().isoformat()}] Attempt {attempt + 1}/{max_retries} failed when executing tool with error: {e}. Tool_invoke_info: {tool_invoke_info}"
                 write_log_process_safe(self.error_log_path, log_msg)
                 if attempt < max_retries - 1:
-                    print(f"Retrying {attempt + 1}/{max_retries}...")
+                    delay = (2 ** attempt) + random.uniform(0, 1)
+                    print(f"Retrying {attempt + 2}/{max_retries} in {delay:.1f}s...")
+                    await asyncio.sleep(delay)
                 else:
                     logging.error(f"Max retries reached when executing tool. Giving up. Tool_invoke_info: {tool_invoke_info}")
                     log_msg = f"[{datetime.now().isoformat()}] Max retries reached when executing tool. Giving up. Tool_invoke_info: {tool_invoke_info}. Error: {e}\n"

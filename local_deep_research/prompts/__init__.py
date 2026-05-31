@@ -13,7 +13,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-PROJECT_ROOT = Path(__file__).resolve().parent  # local_deep_research/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent  # local_deep_research/
 PROMPT_ROOT = PROJECT_ROOT / "_settings" / "prompts"
 
 

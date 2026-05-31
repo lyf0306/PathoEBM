@@ -2,7 +2,7 @@ import re
 from typing import Dict, List, Tuple
 
 from pydantic import BaseModel, Field
-from ..search_system_support import SourcesReference
+from ..search_system_support import SourcesReference, CEBM_LEVEL_DESCRIPTIONS
 
 # Match 64-char hex hashes (content hashes, not real PMIDs)
 _HASH_PATTERN = re.compile(r'^[0-9a-fA-F]{64,}$')
@@ -41,17 +41,32 @@ class ReferencePool:
         self.link2idx: dict[str, int] = {}
         self.base_idx = baseline_max_index
 
-    def add(self, title: str, citation: str, link: str) -> int:
+    def add(self, title: str, citation: str, link: str, cebm_level: str = "") -> int:
         if not link:
             return -1
         if link in self.link2idx:
-            return self.link2idx[link]
+            # Update CEBM level if existing entry lacks it and we now have one
+            existing_idx = self.link2idx[link]
+            if cebm_level:
+                actual_idx = existing_idx - self.base_idx - 1
+                if 0 <= actual_idx < len(self.pool) and not self.pool[actual_idx].cebm_level:
+                    self.pool[actual_idx].cebm_level = cebm_level
+            return existing_idx
         idx = self.base_idx + len(self.pool) + 1
         self.link2idx[link] = idx
         self.pool.append(
-            SourcesReference(title=title or link, subtitle=citation or "", link=link)
+            SourcesReference(title=title or link, subtitle=citation or "", link=link,
+                             cebm_level=cebm_level)
         )
         return idx
+
+    def update_cebm_level(self, idx: int, level: str) -> bool:
+        """Update CEBM evidence level for a reference by its pool index."""
+        actual_idx = idx - self.base_idx - 1
+        if 0 <= actual_idx < len(self.pool):
+            self.pool[actual_idx].cebm_level = level
+            return True
+        return False
 
     def get_ref_by_idx(self, idx: int):
         actual_idx = idx - self.base_idx - 1
@@ -131,7 +146,13 @@ class ReferencePool:
                 if len(title) > 300:
                     title = title[:300] + "..."
                 source_label = _clean_source_label(ref)
-                refs_text += f"[{new_idx}] {source_label}\n"
+                # Study type badge (derived from CEBM level → human-readable description)
+                study_type_badge = ""
+                if ref.cebm_level and ref.cebm_level in CEBM_LEVEL_DESCRIPTIONS:
+                    study_type_badge = f" | {CEBM_LEVEL_DESCRIPTIONS[ref.cebm_level]}"
+                elif ref.cebm_level:
+                    study_type_badge = f" | 证据等级 {ref.cebm_level}"
+                refs_text += f"[{new_idx}] {source_label}{study_type_badge}\n"
                 refs_text += f"    Title: {title}\n"
                 refs_text += f"    Guidelines: 前沿证据合成 (Deep Research)\n"
                 refs_text += "-" * 10 + "\n"
