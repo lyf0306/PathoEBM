@@ -13,7 +13,7 @@
    - 早期（I-II期）中低危及中高危：GOG-99, PORTEC-1, PORTEC-2
      （若分子分型已知，追加 PORTEC-4a——分子分型指导放疗降/升阶梯）
    - 早期高危（I-II期伴高危因素）及局部晚期（III、IVA期）：PORTEC-3, GOG-0258
-   - 晚期（IVB期）及复发一线：GOG-209, NRG-GY018, RUBY, ATTEND, DUO-E
+   - 晚期（IVB期）及复发一线：GOG-209, NRG-GY018, RUBY
    - 晚期复发（二线及以上）：KEYNOTE-775
    对应试验是否有生存数据？
 2. **PICO 精准查证**：治疗方案相关的疗效数据（尤其是分子分型亚组）是否充分？

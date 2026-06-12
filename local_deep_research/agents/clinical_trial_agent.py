@@ -49,7 +49,7 @@ class ClinicalTrialAgent:
         # 由 Python 直接扫描文本，找出真正被检索到的灯塔试验
         lighthouse_trials = [
             "GOG-99", "PORTEC-1", "PORTEC-2", "PORTEC-3", "GOG-0258",
-            "GOG-209", "NRG-GY018", "RUBY", "ATTEND", "DUO-E",
+            "GOG-209", "NRG-GY018", "RUBY",
             "KEYNOTE-775", "PORTEC-4a"
         ]
         

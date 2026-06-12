@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 # Known clinical trial name patterns (case-insensitive)
 _TRIAL_PATTERN = re.compile(
-    r'(PORTEC[-\s]?\d*[a-z]?|GOG[-\s]?\d*[a-z]?|NRG[-\s]?GY\d*|RUBY|ATTEND|'
-    r'DUO[-\s]?E|KEYNOTE[-\s]?\d+)',
+    r'(PORTEC[-\s]?\d*[a-z]?|GOG[-\s]?\d*[a-z]?|NRG[-\s]?GY\d*|RUBY|'
+    r'KEYNOTE[-\s]?\d+)',
     re.IGNORECASE,
 )
 
@@ -141,6 +141,49 @@ class SearchPlanner:
     Generates follow-up search questions for iterative evidence retrieval.
     Uses the three-pillar ("三足鼎立") structured strategy to distribute query quotas.
     """
+
+    # ── 灯塔试验导航库 ──
+    # 结构化记录每个核心临床试验的适用人群分层（5 级分类）。
+    # tier:
+    #   "L1_early"              → 早期（I-II期）：中低危及中高危人群 → 做减法
+    #   "L2_early_high_la"      → 早期高危（I-II期伴高危因素）及局部晚期（III期） → 做加法
+    #   "L3_advanced_1L"         → 晚期（III-IV期）及复发一线治疗 → 化疗+免疫
+    #   "L4_advanced_2L"         → 晚期复发（二线及以上治疗） → 靶向+免疫
+    #   "L5_molecular_explore"   → 前沿探索：分子分型指导的降阶梯/升阶梯治疗
+    # context: 一句话临床定位
+    TRIAL_NAVIGATION = {
+        # ══════════════════════════════════════════════════════════════
+        # L1: 早期（I-II期）：中低危及中高危人群 → 核心是"做减法"
+        # ══════════════════════════════════════════════════════════════
+        "GOG-99":   {"tier": "L1_early", "context": "早期HIR术后辅助盆腔EBRT（首次定义HIR人群，降低局部复发，无OS获益）"},
+        "PORTEC-1": {"tier": "L1_early", "context": "I期中危术后盆腔RT（降低局部复发无OS获益，确立低危患者可仅行观察）"},
+        "PORTEC-2": {"tier": "L1_early", "context": "早期HIR → VBT vs EBRT（VBT同等有效+毒性更低+QoL更高=标准治疗，指南级）"},
+
+        # ══════════════════════════════════════════════════════════════
+        # L2: 早期高危（I-II期伴高危因素）及局部晚期（III期） → 核心是"做加法"
+        # ══════════════════════════════════════════════════════════════
+        "GOG-249":  {"tier": "L2_early_high_la",  "context": "早期高危 → VBT+化疗 vs 盆腔EBRT（RFS/OS无差异但化疗毒性更大，不支持常规替代）"},
+        "PORTEC-3": {"tier": "L2_early_high_la",  "context": "高危早期+III期 → 辅助放化疗 vs 单纯放疗（III期和浆液性癌显著改善PFS和OS）"},
+        "GOG-0258": {"tier": "L2_early_high_la",  "context": "III/IVA期 → 放化疗 vs 单纯化疗（RFS无差异但放化疗局部控制更优，存在争议空间）"},
+
+        # ══════════════════════════════════════════════════════════════
+        # L3: 晚期（III-IV期）及复发一线治疗 → 化疗联合免疫治疗
+        # ══════════════════════════════════════════════════════════════
+        "GOG-209":   {"tier": "L3_advanced_1L", "context": "晚期/复发一线TC方案（紫杉醇+卡铂，非劣效于TAP且毒性更低，确立为标准）"},
+        "NRG-GY018": {"tier": "L3_advanced_1L", "context": "晚期/复发一线TC+帕博利珠单抗（dMMR/pMMR均显著延长PFS，dMMR人群获益极其巨大）"},
+        "RUBY":      {"tier": "L3_advanced_1L", "context": "晚期/复发一线TC+多塔利单抗（dMMR/MSI-H前所未有PFS和OS获益，pMMR同样改善）"},
+
+        # ══════════════════════════════════════════════════════════════
+        # L4: 晚期复发（二线及以上治疗） → 非铂类基础上的靶向与免疫联合
+        # ══════════════════════════════════════════════════════════════
+        "KEYNOTE-775": {"tier": "L4_advanced_2L", "context": "复发二线+ → 仑伐替尼+帕博利珠单抗 vs 单药化疗（pMMR/MSS二线最重要标杆）"},
+
+        # ══════════════════════════════════════════════════════════════
+        # L5: 前沿探索 — 分子分型指导的降阶梯/升阶梯治疗
+        # ══════════════════════════════════════════════════════════════
+        "PORTEC-4a": {"tier": "L5_molecular_explore", "context": "首个按分子分型（POLE/dMMR/NSMP/p53abn）指导早期HIR辅助治疗的前瞻性随机试验"},
+    }
+
     def __init__(self, tool_planning_model, structured_task: dict, questions_per_iteration: int,
                  treatment_context: str = ""):
         self.tool_planning_model = tool_planning_model
@@ -148,241 +191,52 @@ class SearchPlanner:
         self.questions_per_iteration = questions_per_iteration
         self.treatment_context = treatment_context
 
-    # ─────────────────────────────────────────────────────────────
-    # FIGO 驱动灯塔试验解析（纯代码逻辑，不依赖 LLM 判断）
-    # ─────────────────────────────────────────────────────────────
-
-    # FIGO 分期 → 风险层级映射。优先 FIGO 2023，其次 2009，最后兜底裸分期。
-    # I-II 期 → 早期低危/中危；III-IVA 期 → 局部晚期高危；IVB/复发 → 远处转移
-    _FIGO_2023_RE = re.compile(
-        r'(IV[A-E]?\d*|III[A-E]?\d*|II[A-E]?\d*|I[A-E]?\d*)'
-        r'\s*期?\s*[（(]\s*FIGO\s*2023',
-        re.IGNORECASE,
-    )
-    _FIGO_2009_RE = re.compile(
-        r'(IV[A-E]?\d*|III[A-E]?\d*|II[A-E]?\d*|I[A-E]?\d*)'
-        r'\s*期?\s*[（(]\s*FIGO\s*2009',
-        re.IGNORECASE,
-    )
-
-    # 有些诊断文本写了 FIGO 分期但没写年份（如 "FIGO IA2期"），作为兜底
-    _FIGO_BARE_RE = re.compile(
-        r'(?:FIGO\s+)?(IV[A-E]?\d*|III[A-E]?\d*|II[A-E]?\d*|I[A-E]?\d*)\s*期',
-        re.IGNORECASE,
-    )
-
     @staticmethod
-    def _parse_figo_stage(stage_str: str) -> Optional[str]:
-        """Extract FIGO stage from structured diagnosis text.
-        FIGO 2023 takes priority over 2009 when both are present.
-        Returns e.g. 'IA2', 'IIIA1', 'IVB'."""
-        # 1) FIGO 2023 first (preferred)
-        m = SearchPlanner._FIGO_2023_RE.search(stage_str)
-        if m:
-            return m.group(1).upper()
-        # 2) FIGO 2009 fallback
-        m = SearchPlanner._FIGO_2009_RE.search(stage_str)
-        if m:
-            return m.group(1).upper()
-        # 3) Bare stage with FIGO prefix: FIGO IA2期, FIGO III期
-        m = SearchPlanner._FIGO_BARE_RE.search(stage_str)
-        if m:
-            return m.group(1).upper()
-        return None
+    def _build_trial_navigation_text() -> str:
+        """Render TRIAL_NAVIGATION as markdown for the search_planner prompt."""
+        lines = [
+            "## 灯塔试验导航库（请根据患者病情自主选择匹配的试验）",
+            "",
+            '### L1 — 早期（I-II期）中低危/中高危 → 核心是“做减法”',
+            "",
+        ]
+        for name in ["GOG-99", "PORTEC-1", "PORTEC-2"]:
+            info = SearchPlanner.TRIAL_NAVIGATION[name]
+            lines.append(f"- **{name}**：{info['context']}")
+        lines.append("")
 
-    @staticmethod
-    def _is_high_risk_histology(text: str) -> bool:
-        """Check for non-endometrioid, high-grade histology that confers high risk."""
-        t = text.lower()
-        return bool(re.search(
-            r'(浆液性|serous|透明细胞|clear\s*cell|癌肉瘤|carcinosarcoma|'
-            r'非子宫内膜样|non.endometrioid|未分化|undifferentiated)',
-            t,
-        ))
+        lines.append('### L2 — 早期高危（I-II期伴高危因素）及局部晚期（III/IVA期） → 核心是“做加法”')
+        lines.append("")
+        for name in ["GOG-249", "PORTEC-3", "GOG-0258"]:
+            info = SearchPlanner.TRIAL_NAVIGATION[name]
+            lines.append(f"- **{name}**：{info['context']}")
+        lines.append("")
 
-    @staticmethod
-    def _is_high_grade(text: str) -> bool:
-        """Check for FIGO Grade 3 (G3 / Ⅲ级).
-        Uses re.ASCII so \\b treats CJK chars as non-word boundaries,
-        avoiding Unicode \\b quirks without fragile lookbehind syntax."""
-        try:
-            return bool(re.search(
-                r'\b[Gg]3\b|[Gg]rade\s*3|Ⅲ级|III级',
-                text, re.ASCII,
-            ))
-        except re.error as e:
-            logger.error(f"[_is_high_grade] 正则异常: {e}")
-            return False
+        lines.append("### L3 — 晚期（III-IV期）及复发一线治疗 → 化疗联合免疫治疗")
+        lines.append("")
+        for name in ["GOG-209", "NRG-GY018", "RUBY"]:
+            info = SearchPlanner.TRIAL_NAVIGATION[name]
+            lines.append(f"- **{name}**：{info['context']}")
+        lines.append("")
 
-    @staticmethod
-    def _has_lvsi_positive(text: str) -> bool:
-        """True if LVSI is present (not explicitly negated)."""
-        try:
-            t = text.lower()
-            # First check for positive LVSI
-            has_lvsi = bool(re.search(
-                r'lvsi|脉管癌栓|脉管内癌栓|lymphovascular|vascular\s*invasion',
-                t, re.IGNORECASE,
-            ))
-            if not has_lvsi:
-                return False
-            # Exclude negated forms
-            negated = bool(re.search(
-                r'(未见|无|no\s|negative|阴性|denied)[\s\w]{0,20}(lvsi|脉管癌栓|脉管内癌栓|lymphovascular)',
-                t,
-            ))
-            if negated:
-                return False
-            # Exclude parenthetical negatives: LVSI（-）/ LVSI(-) / LVSI阴性
-            if re.search(r'lvsi\s*[（(]\s*[-−—]\s*[）)]|lvsi\s*阴性|lvsi\s*negative', t):
-                return False
-            return True
-        except re.error as e:
-            logger.error(f"[_has_lvsi_positive] 正则异常: {e}")
-            return False
+        lines.append("### L4 — 晚期复发（二线及以上治疗） → 靶向联合免疫")
+        lines.append("")
+        lines.append(f"- **KEYNOTE-775**：{SearchPlanner.TRIAL_NAVIGATION['KEYNOTE-775']['context']}")
+        lines.append("")
 
-    @staticmethod
-    def _has_deep_myometrial_invasion(text: str) -> bool:
-        """True if myometrial invasion >=50% (deep). Excludes superficial/no invasion."""
-        try:
-            t = text.lower()
+        lines.append("### L5 — 前沿探索：分子分型指导的降阶梯/升阶梯治疗")
+        lines.append("")
+        lines.append(f"- **PORTEC-4a**：{SearchPlanner.TRIAL_NAVIGATION['PORTEC-4a']['context']}")
+        lines.append("")
 
-            def _negated(pattern: str) -> bool:
-                """Check if `pattern` appears in a negated context."""
-                return bool(re.search(
-                    r'(未见|无|未达|未累及|不累及|排除|否认|no\s|without|absence)'
-                    r'[\s\w]{0,30}' + pattern,
-                    t,
-                ))
+        lines.append('**【选择原则】**：')
+        lines.append("1. 首先根据患者的 FIGO 分期选择对应的层级（L1-L5）")
+        lines.append("2. 再根据风险因素（G3、LVSI+、深肌层浸润、非子宫内膜样组织学）在同层内选择高危/低危匹配的试验")
+        lines.append("3. 复发/晚期患者优先选 L3-L4，早期低危优先选 L1")
+        lines.append("4. 分子分型明确（NGS确认）的早期HIR患者可额外考虑 L5（PORTEC-4a）")
+        lines.append("5. 不确定时宁可多选 1-2 个相关试验，由后续 _filter_irrelevant_trials 兜底过滤")
 
-            # Negative indicators for deep invasion → return False early
-            if re.search(r'浅肌层|浅表肌层|inner\s*half', t):
-                return False
-            if re.search(r'<50%|<1/2|无肌层|未见肌层', t):
-                return False
-
-            # Positive indicators — but only if not negated
-            if re.search(r'深肌层|深部肌层', t) and not _negated(r'深肌层|深部肌层'):
-                return True
-            if re.search(r'deep\s*myometrial|outer\s*half', t) and not _negated(r'deep\s*myometrial|outer\s*half'):
-                return True
-
-            # > or ≥ for depth threshold
-            if re.search(r'肌层浸润>\s*(?:1/2|50%)', t):
-                return True
-            if re.search(r'肌层浸润≥\s*(?:1/2|50%)', t):
-                return True
-            if re.search(r'浸润.*肌层.*>', t):
-                return True
-            if re.search(r'浸润.*肌层.*≥', t):
-                return True
-
-            return False
-        except re.error as e:
-            logger.error(f"[_has_deep_myometrial_invasion] 正则异常: {e}")
-            return False
-
-    @staticmethod
-    def _resolve_trial_targets_from_structured(
-        figo_stage: Optional[str],
-        diag_text: str,
-        patho_text: str,
-    ) -> str:
-        """
-        基于从诊断/病理字段提取的结构化变量做决策映射，不再对自由文本做模糊正则。
-        """
-        combined = f"{diag_text} {patho_text}"
-
-        # 1) 二线及以上治疗
-        if re.search(r'(二线|second.line|既往铂类|prior.platinum|铂耐药|platinum.resistant)', combined):
-            return "KEYNOTE-775"
-
-        # 2) 复发
-        if re.search(r'(复发|recurr|relapse)', combined):
-            return "GOG-209、NRG-GY018、RUBY、ATTEND、DUO-E"
-
-        # 3) FIGO 2023 分期判断
-        if figo_stage:
-            stage = figo_stage.upper()
-            # IVB → distant metastasis
-            if stage.startswith('IVB'):
-                return "GOG-209、NRG-GY018、RUBY、ATTEND、DUO-E"
-            # III / IVA → locally advanced → high risk
-            if (stage.startswith('III') or stage.startswith('IVA')):
-                return "PORTEC-3、GOG-0258"
-
-        # 4) Stage I-II but with high-risk features
-        try:
-            has_high_risk = (
-                SearchPlanner._is_high_risk_histology(combined)
-                or SearchPlanner._is_high_grade(combined)
-                or SearchPlanner._has_lvsi_positive(combined)
-                or SearchPlanner._has_deep_myometrial_invasion(combined)
-            )
-        except re.error as e:
-            logger.error(f"[FIGO Resolver] 高危特征检测正则异常: {e} | diag={diag_text[:100]}")
-            has_high_risk = False
-        if has_high_risk:
-            return "PORTEC-3、GOG-0258"
-
-        # 5) Otherwise: early-stage, low/intermediate risk
-        return "GOG-99、PORTEC-1、PORTEC-2"
-
-    def _resolve_trial_targets(self) -> str:
-        """从结构化字段提取 FIGO 分期 + 病理特征 → 代码决策映射。"""
-        try:
-            core = self.structured_task.get("oncology_core") or self.structured_task.get("oncology_profile") or {}
-        except Exception:
-            core = {}
-
-        diag_text = (core.get("diagnosis_and_stage", "") or "") if isinstance(core, dict) else ""
-        patho_text = (core.get("pathology_and_molecular", "") or "") if isinstance(core, dict) else ""
-
-        if not diag_text.strip() and not patho_text.strip():
-            diag_text = self.treatment_context[:500]
-
-        # 直接从 diagnosis_and_stage 提取 FIGO 分期（2023 优先，2009 兜底）
-        figo_stage = self._parse_figo_stage(diag_text)
-        if figo_stage:
-            logger.info(f"[FIGO Resolver] 从诊断字段提取 FIGO 分期: {figo_stage}")
-        else:
-            logger.info("[FIGO Resolver] 未提取到 FIGO 分期，仅依据病理特征判断")
-
-        try:
-            targets = self._resolve_trial_targets_from_structured(figo_stage, diag_text, patho_text)
-        except re.error as e:
-            logger.error(f"[FIGO Resolver] 结构化决策正则异常: {e}，回退至保守策略")
-            targets = "GOG-99、PORTEC-1、PORTEC-2"
-
-        # PORTEC-4a 仅适用于早期 HIR（高中危）患者，分子分型指导放疗降/升阶梯。
-        # 低危患者（G1、IA、LVSI-）无需辅助治疗，PORTEC-4a 不适用。
-        # HIR 特征：深肌层/IB、LVSI+、G3、或 II 期
-        try:
-            combined = f"{diag_text} {patho_text}"
-            is_hir_early = (
-                SearchPlanner._has_lvsi_positive(combined)
-                or SearchPlanner._has_deep_myometrial_invasion(combined)
-                or SearchPlanner._is_high_grade(combined)
-                or (figo_stage is not None and figo_stage.upper().startswith('II'))
-            )
-            has_molecular_data = bool(re.search(
-                r'(p53|MSI|MMR|POLE|dMMR|MSH|MLH|PMS2|MSH6|'
-                r'分子分型|molecular|NGS|测序|TCGA)',
-                patho_text, re.IGNORECASE,
-            )) or (
-                # IHC/免疫组化仅在有具体结果时才算"有分子数据"，排除"未做/未回报/未出"
-                bool(re.search(r'(IHC|免疫组化)', patho_text, re.IGNORECASE))
-                and not re.search(r'(IHC|免疫组化).{0,10}(?:未做|未回报|未出|待)', patho_text)
-            )
-            is_early = bool(re.search(r'(GOG-99|PORTEC-1|PORTEC-2)', targets))
-            if has_molecular_data and is_early and is_hir_early and "PORTEC-4a" not in targets:
-                targets += "、PORTEC-4a"
-                logger.info("[FIGO Resolver] 早期 HIR + 分子数据 → 追加 PORTEC-4a")
-        except re.error as e:
-            logger.error(f"[FIGO Resolver] PORTEC-4a 检测正则异常: {e}，跳过 PORTEC-4a 判定")
-
-        logger.info(f"[FIGO Resolver] 灯塔试验目标: {targets}")
-        return targets
+        return "\n".join(lines)
 
     @staticmethod
     def _is_molecular_ihc_only(structured_task: dict) -> str:
@@ -416,21 +270,17 @@ class SearchPlanner:
         return ""
 
     async def generate_questions(self, current_knowledge: str, query: str) -> SearchPlan:
-        now = datetime.now().strftime("%Y-%m-%d")
         structured_data = json.dumps(self.structured_task, ensure_ascii=False, indent=2)
 
-        # ─────────────────────────────────────────────────────────────
-        # 代码级读取 FIGO 分期 → 确定灯塔试验检索目标
-        # （不依赖 LLM 判断患者病情，纯逻辑驱动）
-        # ─────────────────────────────────────────────────────────────
-        trial_targets = self._resolve_trial_targets()
+        # ─── 灯塔试验导航库（LLM 据此自主选择匹配患者病情的试验）───
+        nav_text = SearchPlanner._build_trial_navigation_text()
 
-        # ─── 检查分子分型是否为 IHC-only，若是则抑制分子特异性检索 ───
+        # ─── 分子分型是否仅为 IHC-only，若是则抑制分子特异性检索 ───
         molecular_restriction = self._is_molecular_ihc_only(self.structured_task)
 
         prompt = prompt_manager.get("search_planner").format(
             questions_per_iteration=self.questions_per_iteration,
-            trial_targets=trial_targets,
+            trial_navigation=nav_text,
             molecular_restriction=molecular_restriction,
             treatment_context=self.treatment_context[:3000],
             structured_data=structured_data,
@@ -453,7 +303,7 @@ class SearchPlanner:
                     if challenge:
                         logger.info(f"翻译官临床质询: {challenge}")
 
-                    # Try new structured format: trial_search_plan
+                    # Structured format: trial_search_plan
                     trial_plan_raw = parsed.get("trial_search_plan")
                     if (
                         trial_plan_raw
@@ -463,7 +313,7 @@ class SearchPlanner:
                         pico_raw = parsed.get("pico_queries", []) or []
                         comorb_raw = parsed.get("comorbidity_queries", []) or []
                         return self._build_structured_search_plan(
-                            trial_plan_raw, pico_raw, comorb_raw
+                            trial_plan_raw, pico_raw, comorb_raw,
                         )
 
                     # Fallback: old flat sub_queries format

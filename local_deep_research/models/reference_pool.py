@@ -1,8 +1,11 @@
+import logging
 import re
 from typing import Dict, List, Tuple
 
 from pydantic import BaseModel, Field
 from ..search_system_support import SourcesReference, CEBM_LEVEL_DESCRIPTIONS
+
+logger = logging.getLogger(__name__)
 
 # Match 64-char hex hashes (content hashes, not real PMIDs)
 _HASH_PATTERN = re.compile(r'^[0-9a-fA-F]{64,}$')
@@ -121,16 +124,43 @@ class ReferencePool:
         all_cited_ids = [int(m.group(1)) for m in re.finditer(citation_pattern, content)]
 
         unique_cited_ids = list(dict.fromkeys(all_cited_ids))
+        total_pool = len(self.pool)
+        logger.info(
+            "[RefPool] reindex_references: 在报告中找到 %d 个 [^^n] 引用（去重后 %d 个），"
+            "ReferencePool 中共有 %d 条文献",
+            len(all_cited_ids), len(unique_cited_ids), total_pool,
+        )
+
         old_id_to_new_id = {}
         new_references_list = []
         current_new_id = self.base_idx + 1
 
+        matched = 0
         for old_id in unique_cited_ids:
             ref_obj = self.get_ref_by_idx(old_id)
             if ref_obj:
                 old_id_to_new_id[old_id] = current_new_id
                 new_references_list.append((current_new_id, ref_obj))
                 current_new_id += 1
+                matched += 1
+
+        if unique_cited_ids and not matched:
+            logger.warning(
+                "[RefPool] 所有 %d 个引用 ID 均未在 ReferencePool 中找到匹配！"
+                "引用ID范围: %d-%d, 池中ID范围: 1-%d (base_idx=%d)",
+                len(unique_cited_ids),
+                min(unique_cited_ids), max(unique_cited_ids),
+                total_pool, self.base_idx,
+            )
+        elif unique_cited_ids:
+            missing = len(unique_cited_ids) - matched
+            if missing:
+                logger.warning(
+                    "[RefPool] %d/%d 个引用未在池中找到匹配", missing, len(unique_cited_ids)
+                )
+            logger.info("[RefPool] 成功匹配 %d 条引用 → 生成 %d 条参考文献", matched, len(new_references_list))
+        else:
+            logger.warning("[RefPool] 报告中未找到任何 [^^n] 引用标记！参考文献列表将为空。")
 
         def replace_match(match):
             old_id = int(match.group(1))
@@ -139,7 +169,7 @@ class ReferencePool:
 
         new_content = re.sub(citation_pattern, replace_match, content)
 
-        refs_text = "\n==================================================\n"
+        refs_text = "\n==================== 参考文献 (References) ====================\n"
         if new_references_list:
             for new_idx, ref in new_references_list:
                 title = ref.title.replace("\n", " ").strip() if ref.title else ref.link

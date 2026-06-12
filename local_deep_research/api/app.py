@@ -17,6 +17,7 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 # Ensure project root is importable (for absolute imports of local_deep_research)
@@ -60,6 +61,11 @@ def _create_model(model_choice: str):
 
     if model_choice == "auto":
         model_choice = get_model_provider()
+
+    # Resolve "auto" (config default) to concrete provider — try DeepSeek first,
+    # let the exception handler below fall back to local if unreachable.
+    if model_choice == "auto":
+        model_choice = "deepseek"
 
     # ---- Local-only path ----
     if model_choice == "local":
@@ -209,26 +215,6 @@ async def _execute_job(job: JobState, job_manager: JobManager):
             final_report = depersonalize_report(final_report)
             final_report = re.sub(r'\*\*', '', final_report)
 
-            # Split references
-            split_marker = "=================================================="
-            new_evidence_text = final_report
-            new_refs_text = ""
-            if split_marker in final_report:
-                parts = final_report.split(split_marker)
-                new_evidence_text = parts[0].strip()
-                new_refs_text = parts[1].strip()
-
-            combined_report = (
-                "### 循证校验与优化的最终治疗方案 (Deep EBM Synthesized Plan)\n\n"
-                f"{new_evidence_text}\n"
-                f"\n{separator}\n"
-                f"{baseline_refs}\n"
-            )
-            if new_refs_text:
-                combined_report += f"{new_refs_text}\n"
-
-            final_report = combined_report
-
         # Count references
         ref_count = len(re.findall(r'\[\^\^\d+\]|\[\d+\]', final_report)) if final_report else 0
         iterations = results.get("iterations", job.max_iterations)
@@ -256,10 +242,11 @@ async def _execute_job(job: JobState, job_manager: JobManager):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Create JobManager on startup, graceful shutdown on teardown."""
-    job_manager = JobManager(max_concurrent=5)
+    max_concurrent = int(os.getenv("EBM_MAX_CONCURRENT", "10"))
+    job_manager = JobManager(max_concurrent=max_concurrent)
     app.state.job_manager = job_manager
     cleanup_task = asyncio.create_task(job_manager._purge_loop())
-    logger.info("PathoEBM API started (max_concurrent=5, retention=30d)")
+    logger.info(f"PathoEBM API started (max_concurrent={max_concurrent}, retention=30d)")
     try:
         yield
     finally:
@@ -278,6 +265,14 @@ app = FastAPI(
     description="Evidence-based medicine pipeline for gynecologic oncology MDT reports",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

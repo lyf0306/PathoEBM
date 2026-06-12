@@ -128,6 +128,9 @@ class ReActSearchAgent:
                 # Step 3b: Strip any [^^n] citations that don't exist in ref_map
                 synthesis = self._validate_citations(synthesis, ref_map)
 
+                # Step 3c: Adversarial self-check — DISABLED (pending format alignment)
+                # synthesis = await self._adversarial_self_check(synthesis, all_results, ref_map)
+
                 # Step 4: Check sufficiency (always, even on last round —
                 #         so the pipeline gets follow_up_queries when needed)
                 verdict = await self._check_sufficiency(query, synthesis)
@@ -179,6 +182,13 @@ class ReActSearchAgent:
                     ref_map = self._register_refs(all_results)
                     try:
                         synthesis = await self._synthesize(query, all_results, ref_map)
+                        # Adversarial check in recovery path — DISABLED
+                        # try:
+                        #     synthesis = await self._adversarial_self_check(
+                        #         synthesis, all_results, ref_map
+                        #     )
+                        # except Exception:
+                        #     pass
                         return {"synthesis": synthesis, "sufficient": False, "follow_up_queries": []}
                     except Exception:
                         return {"synthesis": "", "sufficient": False, "follow_up_queries": []}
@@ -244,6 +254,8 @@ class ReActSearchAgent:
             combined_ctx = f"{trial_name} {' '.join(sub_queries)}"
             synthesis = await self._synthesize(combined_ctx, all_results, ref_map)
             synthesis = self._validate_citations(synthesis, ref_map)
+            # Adversarial self-check DISABLED (pending format alignment)
+            # synthesis = await self._adversarial_self_check(synthesis, all_results, ref_map)
 
             # Step 5: Trial-level sufficiency check (ALWAYS — even on last round)
             verdict = await self._check_trial_sufficiency(trial_name, sub_queries, synthesis)
@@ -668,14 +680,12 @@ class ReActSearchAgent:
             if not block.strip():
                 continue
 
-            # Extract URL
+            # Extract URL — use same robust patterns as _extract_pmids
             url = ""
             pmid_match = (
                 re.search(r"pubmed\.ncbi\.nlm\.nih\.gov/(\d+)", block, re.IGNORECASE)
-                or re.search(
-                    r"""["']?(?:PMID|uid|id)["']?\s*[:=]\s*["']?(\d{7,9})["']?""",
-                    block, re.IGNORECASE,
-                )
+                or re.search(r'PMID[:\s]*(\d{7,9})', block, re.IGNORECASE)
+                or re.search(r"""["']?(?:uid|id)["']?\s*[:=]\s*["']?(\d{7,9})["']?""", block, re.IGNORECASE)
             )
             nct_match = re.search(r"(NCT\d{8})", block, re.IGNORECASE)
 
@@ -690,18 +700,32 @@ class ReActSearchAgent:
                 continue
             seen_in_result.add(url)
 
-            # Extract title
-            title = "Unknown Title"
-            title_match = (
-                re.search(r"^(?:Article )?Title:\s*([^\n]+)", block, re.IGNORECASE | re.MULTILINE)
-                or re.search(r'\bTitle:\s*([^\n]+)', block, re.IGNORECASE)
-                or re.search(r'"title"\s*:\s*"([^"]+)"', block, re.IGNORECASE)
-                or re.search(r'"BriefTitle"\s*:\s*"([^"]+)"', block, re.IGNORECASE)
-            )
-            if title_match:
-                title = title_match.group(1).strip()
+            # Extract title — multiple fallback patterns
+            title = ""
+            for pat in [
+                r"^(?:Article\s*)?Title:\s*([^\n]+)",
+                r'\bTitle:\s*([^\n]+)',
+                r'"title"\s*:\s*"([^"]+)"',
+                r'"BriefTitle"\s*:\s*"([^"]+)"',
+                r'"OfficialTitle"\s*:\s*"([^"]+)"',
+                r'"AcronymTitle"\s*:\s*"([^"]+)"',
+            ]:
+                m = re.search(pat, block, re.IGNORECASE | re.MULTILINE)
+                if m:
+                    title = m.group(1).strip()
+                    break
 
-            if len(title) >= 15 or "FDA" in title:
+            # Fallback title: use PMID/NCT if we couldn't extract a real title
+            if not title or len(title) < 5:
+                if pmid_match:
+                    title = f"PubMed PMID:{pmid_match.group(1)}"
+                elif nct_match:
+                    title = nct_match.group(1)
+                elif "openfda" in block.lower():
+                    title = "FDA Label"
+
+            # Sanity check: yield if we have both url and title
+            if title and len(title) >= 5:
                 yield url, title
 
     # -----------------------------------------------------------------
@@ -1006,14 +1030,40 @@ class ReActSearchAgent:
 
     @staticmethod
     def _remove_thin_entries(text: str) -> str:
-        """Remove ##### entries that lack extracted data points (• bullets).
+        """Remove ##### entries that lack extracted data points.
 
-        An entry consisting of only a header and 1-2 descriptive sentences,
-        with no • data-point bullets, is noise — it carries zero actionable
-        evidence for downstream agents.
+        An entry is considered "thin" (data-less) if it has ONLY a title and
+        descriptive prose, with no extractable numerical data. We check for:
+          - Standard • bullet data points
+          - Alternative bullet markers (-, *, etc.)
+          - Key clinical-trial data patterns (HR, 95% CI, P values, N=, OS/RFS rates)
+
+        If any of these are found, the entry carries actionable evidence and is kept.
         """
         if not text:
             return text
+
+        # Patterns that indicate substantive extracted data (beyond plain prose)
+        _BULLET_RE = re.compile(
+            r'^[•◦▪‣·\-*]\s', re.MULTILINE
+        )
+        _DATA_INDICATOR_RE = re.compile(
+            r'(?:HR|OR|RR)\s*[=:≈]\s*[\d.]+|'            # effect size (HR=0.54)
+            r'95%\s*CI\s*[：:]\s*[\d.]+|'                # confidence interval
+            r'[Pp]\s*[=<>≤≥]\s*0?\.\d+|'                # p-value
+            r'N\s*[=:＝]\s*\d[\d,]*|'                    # sample size
+            r'(?:OS|RFS|PFS|DFS|CSS|EFS)\s*(?:率|rate)?\s*(?:为|:)?\s*\d+|'  # survival %
+            r'\d+% vs \d+%|'                             # comparison like "52% vs 60%"
+            r'试验组|对照组|治疗组|观察组|安慰剂组'          # arm description (Chinese)
+        )
+
+        def _has_actionable_data(entry: str) -> bool:
+            """Check if entry contains extractable clinical evidence."""
+            if _BULLET_RE.search(entry):
+                return True
+            if _DATA_INDICATOR_RE.search(entry):
+                return True
+            return False
 
         # ── Pass 1: split at every ##### and #### boundary ──
         parts = re.split(r'(?=^(?:#####|####) )', text, flags=re.MULTILINE)
@@ -1029,10 +1079,9 @@ class ReActSearchAgent:
                 kept.append(part)
                 continue
 
-            # ##### literature entries — keep only if they have data bullets
+            # ##### literature entries — keep only if they have extractable data
             if stripped.startswith('##### '):
-                has_bullet = bool(re.search(r'^• ', stripped, re.MULTILINE))
-                if has_bullet:
+                if _has_actionable_data(stripped):
                     kept.append(part)
                 else:
                     title_line = stripped.split('\n')[0][6:].strip()
@@ -1122,6 +1171,203 @@ class ReActSearchAgent:
             return m.group(0) if int(m.group(1)) in valid_ids else ""
 
         return re.sub(r"\[\^\^(\d+)\]", _replace, text)
+
+    # =================================================================
+    # Adversarial self-check — per-claim refutation inside ReAct loop
+    # =================================================================
+
+    @staticmethod
+    def _extract_raw_articles(results: list) -> list[dict]:
+        """Extract per-article raw texts from MCP tool results.
+
+        Uses the same parsing logic as _synthesize, but returns individual
+        articles keyed by PMID for matching against synthesis blocks.
+
+        Returns:
+            list of {"pmid": str, "text": str} — one per article found
+        """
+        articles: list[dict] = []
+        for r in (results or [])[:10]:
+            try:
+                if isinstance(r, dict):
+                    c = r.get("content", "")
+                    if c:
+                        parsed = ast.literal_eval(c)
+                        if isinstance(parsed, list):
+                            for item in parsed:
+                                if isinstance(item, dict) and "text" in item:
+                                    txt = item["text"].strip()
+                                    if len(txt) > 8000:
+                                        txt = txt[:8000] + "...[截断]"
+                                    pmids = ReActSearchAgent._extract_pmids(txt)
+                                    pmid = pmids[0] if pmids else ""
+                                    articles.append({"pmid": pmid, "text": txt})
+            except Exception:
+                pass
+        return articles
+
+    @staticmethod
+    def _parse_synthesis_blocks(synthesis: str) -> list[tuple[str, int]]:
+        """Parse synthesis into per-paper blocks: (block_text, cite_id).
+
+        Synthesis uses #### Title [^^n] format (pre-demotion) for paper entries.
+        """
+        if not synthesis:
+            return []
+        block_pattern = re.compile(
+            r'(#### .+? \[(\d+)\].*?)(?=\n#### |\n#### [🎯🧬🏥]|\Z)',
+            re.DOTALL,
+        )
+        return [(m.group(1), int(m.group(2))) for m in block_pattern.finditer(synthesis)]
+
+    async def _adversarial_self_check(
+        self, synthesis: str, results: list, ref_map: str
+    ) -> str:
+        """Run adversarial verification against each per-paper claim block.
+
+        For each #### Paper Title [^^n] block in the synthesis:
+          1. Resolve [^^n] → PMID via ReferencePool
+          2. Find the matching raw article in the tool results
+          3. Run a fast-model adversarial check: try to refute the claim
+             using the original article as ground truth
+          4. If refuted, patch the claim with the corrected text in-place
+
+        Returns the corrected synthesis (or original if no refutations).
+
+        This runs INSIDE the ReAct loop — BEFORE sufficiency check — so that
+        refuted claims are corrected before the loop decides whether to
+        continue searching or return.  All blocks are checked in parallel.
+        """
+        if not synthesis or not results or not self.ref_pool:
+            return synthesis
+
+        blocks = self._parse_synthesis_blocks(synthesis)
+        if not blocks:
+            return synthesis
+
+        raw_articles = self._extract_raw_articles(results)
+        if not raw_articles:
+            logger.info("  [对抗性自检] 无原始文献可匹配，跳过")
+            return synthesis
+
+        # Build PMID → article text index for O(1) lookup
+        pmid_to_article: dict[str, str] = {}
+        for art in raw_articles:
+            if art["pmid"]:
+                pmid_to_article[art["pmid"]] = art["text"]
+
+        logger.info(
+            f"  🔍 [对抗性自检] 开始对 {len(blocks)} 个文献块执行对抗性验证..."
+        )
+
+        corrections: list[tuple[str, str]] = []  # [(block_text, corrected_block)]
+
+        async def _verify_block(block_text: str, cite_id: int) -> tuple[str, str] | None:
+            """Verify one block. Returns (old_block, corrected_block) or None."""
+            ref = self.ref_pool.get_ref_by_idx(cite_id)
+            if not ref or not ref.link:
+                return None
+
+            # Resolve citation → PMID
+            ref_pmid = ""
+            pmid_m = re.search(r'pubmed\.ncbi\.nlm\.nih\.gov/(\d+)', ref.link, re.IGNORECASE)
+            if pmid_m:
+                ref_pmid = pmid_m.group(1)
+
+            if not ref_pmid or ref_pmid not in pmid_to_article:
+                return None
+
+            raw_article = pmid_to_article[ref_pmid]
+
+            prompt = (
+                "你是证据审查员。你的任务是：基于【原始文献】的内容，尝试推翻【合成块】中的每一条结论声明。\n\n"
+                f"## 合成块（ReAct agent 对该文献的总结）\n{block_text[:3000]}\n\n"
+                f"## 原始文献（MCP 返回的完整摘要）\n{raw_article[:6000]}\n\n"
+                "## 审查维度\n"
+                "逐一检查，只要有一条成立就输出 REFUTED：\n\n"
+                "1. **统计误读**：合成块说\"显著有效/有统计学差异\"，但原始文献中对应 HR/OR/RR 的 95% CI 跨 1.0，或 P>0.05\n"
+                "2. **数值虚构**：合成块中的具体数值（N、HR、P、百分比）在原始文献中找不到对应数据\n"
+                "3. **选择性报告**：合成块只报告了有利的次要终点，但原始文献明确报告了主要终点无统计学差异\n"
+                "4. **过度推广**：原始文献是 II 期/单中心/小样本(N<100)，合成块将其当作确定性证据陈述\n"
+                "5. **亚组伪装主分析**：合成块作为主要结论报告的，原始文献中明确标注为 post-hoc/亚组/探索性分析\n\n"
+                "## 输出格式（严格遵循）\n"
+                "对每条有问题的声明，输出一行：\n"
+                f"  REFUTED | [^^{cite_id}] | 被推翻的声明（原文摘录） | 应修正为（基于原始文献的正确表述）\n\n"
+                "如果合成块中所有声明均站得住，只输出：\n"
+                f"  STANDS | [^^{cite_id}]\n\n"
+                "不要输出任何其他内容。"
+            )
+
+            try:
+                resp = await invoke_with_timeout_and_retry(
+                    self.fast_model, prompt, timeout=60.0, max_retries=1
+                )
+                raw = remove_think_tags(resp.content).strip()
+            except Exception:
+                return None
+
+            if not raw or raw.startswith("STANDS"):
+                return None
+
+            # Parse refuted claims and apply corrections within this block
+            corrected = block_text
+            refuted_count = 0
+            for line in raw.split("\n"):
+                line = line.strip()
+                if not line.startswith("REFUTED"):
+                    continue
+                parts = [p.strip() for p in line.split("|")]
+                if len(parts) >= 4:
+                    original_claim = parts[2]
+                    fix = parts[3]
+                    if original_claim and fix:
+                        if original_claim in corrected:
+                            corrected = corrected.replace(original_claim, fix)
+                            refuted_count += 1
+                            logger.info(
+                                f"  ⚠️ [对抗性自检] [^^{cite_id}] 修正: "
+                                f"{original_claim[:60]}... → {fix[:60]}..."
+                            )
+                        else:
+                            # Claim text not found verbatim — append caveat
+                            caveat = (
+                                f"\n\n⚠️ [对抗性自检] 上述分析可能存在问题，"
+                                f"请核实：{fix}"
+                            )
+                            corrected = corrected.rstrip() + caveat
+                            refuted_count += 1
+                            logger.info(
+                                f"  ⚠️ [对抗性自检] [^^{cite_id}] 追加警示: {fix[:80]}..."
+                            )
+
+            if refuted_count > 0:
+                return (block_text, corrected)
+            return None
+
+        # Run all block checks in parallel (each block independently verified)
+        check_results = await asyncio.gather(
+            *[_verify_block(block, cid) for block, cid in blocks],
+            return_exceptions=True,
+        )
+
+        for result in check_results:
+            if isinstance(result, tuple) and len(result) == 2:
+                corrections.append(result)
+
+        if corrections:
+            logger.info(
+                f"  ⚠️ [对抗性自检] 发现 {len(corrections)} 个文献块存在问题，"
+                f"共 {len(blocks)} 个块"
+            )
+            for old_block, new_block in corrections:
+                if old_block in synthesis:
+                    synthesis = synthesis.replace(old_block, new_block)
+        else:
+            logger.info(
+                f"  ✅ [对抗性自检] 所有 {len(blocks)} 个文献块均通过验证"
+            )
+
+        return synthesis
 
     # -----------------------------------------------------------------
     # Cached accessors

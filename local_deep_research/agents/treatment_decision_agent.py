@@ -88,9 +88,12 @@ class TreatmentDecisionAgent:
                 "🔴🔴🔴\n"
             )
 
+        # ── Extract preliminary plan as Phase 1 baseline anchor ──
+        prelim_tx = proposed_plan.get("main_oncology_treatment", "")
+
         # =================================================================
         # Phase 1: Evidence analysis → structured decision summary
-        # (only guideline + trial evidence + concise structured patient data)
+        # (guideline + trial evidence + concise patient data + prelim_tx baseline)
         # =================================================================
         logger.info("[TreatmentDecisionAgent] Phase 1: 循证分析与决策...")
         decision_summary = await self._plan_treatment_decision(
@@ -99,6 +102,7 @@ class TreatmentDecisionAgent:
             guideline_section=guideline_section,
             trial_analysis=trial_analysis,
             feedback_block=feedback_block,
+            prelim_tx=prelim_tx,
         )
         logger.info(
             f"[TreatmentDecisionAgent] Phase 1 完成（{len(decision_summary)} 字符）"
@@ -287,6 +291,13 @@ class TreatmentDecisionAgent:
                     return True
         return False
 
+    # Regex to split plan text from trailing justification clauses.
+    # Model sometimes writes "TC方案...共6周期。因缺乏支持放疗的证据..."
+    # — the "放疗" in the justification is NOT a treatment component.
+    _JUSTIFICATION_SPLIT = re.compile(
+        r'[。；，]\s*(?=因|鉴于|由于|基于|经MDT|综合|结合|考虑到|综上|目前|现阶段|鉴于目前)'
+    )
+
     @staticmethod
     def _check_decision_consistency(decision_text: str) -> str:
         """
@@ -307,17 +318,131 @@ class TreatmentDecisionAgent:
         if not rt_decision or not final_plan:
             return ""
 
+        # ── Clean plan text: strip trailing justification clauses ──
+        # Model sometimes appends reasoning to the plan line, e.g.:
+        #   "TC方案...共6周期。因缺乏支持放疗...证据，经MDT讨论..."
+        # The "放疗" in the justification triggers a false positive.  Only
+        # the regimen part (before the first justification marker) matters.
+        parts = TreatmentDecisionAgent._JUSTIFICATION_SPLIT.split(final_plan, maxsplit=1)
+        plan_clean = parts[0].strip()
+
         rt_omit = any(kw in rt_decision for kw in ["免除放疗", "免除", "不推荐放疗", "omit", "不推荐"])
-        plan_has_rt = TreatmentDecisionAgent._has_rt_keyword(final_plan)
+        plan_has_rt = TreatmentDecisionAgent._has_rt_keyword(plan_clean)
 
         if rt_omit and plan_has_rt:
-            return f"放疗结论=免除, 但最终核心方案含放疗组分: {final_plan[:80]}"
+            return f"放疗结论=免除, 但最终核心方案含放疗组分: {plan_clean[:80]}"
 
         rt_keep = any(kw in rt_decision for kw in ["保留EBRT", "保留放疗", "保留", "EBRT", "推荐放疗"])
         if rt_keep and not plan_has_rt:
-            return f"放疗结论=保留放疗, 但最终核心方案缺少放疗组分: {final_plan[:80]}"
+            return f"放疗结论=保留放疗, 但最终核心方案缺少放疗组分: {plan_clean[:80]}"
 
         return ""
+
+    # -----------------------------------------------------------------
+    # Phase 1 output validation — check required fields are non-empty
+    # -----------------------------------------------------------------
+    _REQUIRED_DECISION_FIELDS: list[tuple[str, str]] = [
+        ("最终核心方案", r'最终核心方案[：:]\s*(.+)'),
+        ("放疗结论", r'放疗结论[：:]\s*(.+)'),
+        ("PET-CT决策", r'PET-CT决策[：:]\s*(.+)'),
+    ]
+
+    @classmethod
+    def _check_empty_decision_fields(cls, content: str) -> list[str]:
+        """Return names of required decision fields whose values are empty/missing."""
+        empty = []
+        for field_name, pattern in cls._REQUIRED_DECISION_FIELDS:
+            m = re.search(pattern, content, re.MULTILINE)
+            if not m:
+                empty.append(field_name)
+                continue
+            value = m.group(1).strip()
+            # Common patterns that indicate an unfilled field
+            if (not value or
+                value in ("待定", "待确认", "无", "无信息", "暂无") or
+                len(value) < 3):
+                empty.append(field_name)
+        return empty
+
+    # =================================================================
+    # Retry prompt builder — rebuilds prompt with targeted fix hints
+    # =================================================================
+    @staticmethod
+    def _build_retry_prompt(
+        base_prompt: str,
+        error_type: str,
+        error_detail: str,
+    ) -> str:
+        """
+        Build a retry prompt by appending a targeted fix instruction to the
+        clean base prompt.
+
+        IMPORTANT: base_prompt is ALREADY the clean original (saved via
+        ``base_prompt = prompt`` before any retry augmentations).  Do NOT
+        strip "🔴🔴🔴" — the base prompt may legitimately contain that
+        marker in other blocks (feedback_block, etc.), and stripping on
+        its first occurrence would truncate 90 % of the instructions.
+        """
+
+        if error_type == "consistency":
+            hint = textwrap.dedent(f"""
+            🔴🔴🔴 **【上一轮输出存在内部矛盾——必须修正】** 🔴🔴🔴
+            你的上一轮输出存在以下矛盾：
+            {error_detail}
+
+            🛑 **【放疗定义——VBT也是放疗】**：放疗包括EBRT（盆腔外照射）和VBT（阴道近距离放疗/后装治疗）。
+               "免除放疗"= 既无EBRT也无VBT。若方案中有VBT，放疗结论**绝对不能**写"免除放疗"。
+
+            🛑 **修正方法（按顺序执行——证据驱动，而非格式对齐）**：
+            1. 重新审视上方循证证据中放疗相关试验的 OS 数据（重点关注差异组分为放疗的试验，如 GOG-0258）。
+            2. 基于证据确定临床正确的放疗结论（四选一，互斥）：
+               - `保留EBRT`：仅保留盆腔外照射
+               - `保留EBRT+VBT`：EBRT + 阴道近距离放疗推量
+               - `单纯VBT`：免除EBRT但保留阴道近距离放疗（这**不是**"免除放疗"）
+               - `免除放疗`：**既无EBRT也无VBT**，患者不接受任何形式的放疗
+            3. 放疗结论是决策根，最终核心方案是执行——方案必须逐词服从结论：
+               - 放疗结论为"免除放疗" → 方案中逐词检查，确认无EBRT/VBT/放疗/后装/近距离字眼
+               - 放疗结论为"单纯VBT" → 方案中必须出现VBT/近距离放疗，但**不得**出现EBRT
+               - 放疗结论为"保留EBRT" → 方案中必须出现EBRT/盆腔放疗
+               - 放疗结论为"保留EBRT+VBT" → 方案中必须同时出现EBRT和VBT
+            🔴🔴🔴
+            """).strip()
+        elif error_type == "empty_fields":
+            missing_list = "\n".join(
+                f"  - {name}：必须填写具体内容，不得留空"
+                for name in error_detail.split(", ")
+            )
+            hint = textwrap.dedent(f"""
+            🔴🔴🔴 **【上一轮输出字段为空——必须填满以下字段】** 🔴🔴🔴
+            你的上一轮输出中，以下必需字段的值为空或不完整：
+            {missing_list}
+
+            🛑 **填写指南**：
+            - 最终核心方案：写完整的化疗方案（药物+剂量+周期数）。🛑 VBT/后装/近距离也是放疗——若方案含VBT，放疗结论不得写"免除放疗"。
+            - 放疗结论：必须写以下四者之一（互斥）：
+              `保留EBRT` / `保留EBRT+VBT` / `免除放疗`（=既无EBRT也无VBT） / `单纯VBT`（=免除EBRT但保留VBT，≠免除放疗）
+            - PET-CT决策：必须写"追加PET-CT"或"不常规追加PET-CT"
+            - 以上字段不得留空、不得写"待定"、不得省略——这是对患者出具的法律文书。
+            🔴🔴🔴
+            """).strip()
+        elif error_type == "missing_markers":
+            hint = textwrap.dedent(f"""
+            🔴🔴🔴 **【上一轮输出缺少必需的决策标记——必须包含】** 🔴🔴🔴
+            你的上一轮输出中缺少"### 方案决策"标题或"放疗结论"字段。
+            请严格按以下格式输出（从"### 方案决策"开始）：
+            ### 方案决策
+            - 最终核心方案：[...]
+            - 化疗依据：[...]
+            - 放疗结论：[保留EBRT / 保留EBRT+VBT / 免除放疗 / 单纯VBT]
+            - 放疗依据：[...]
+            - PET-CT决策：[追加PET-CT / 不常规追加PET-CT]
+            - PET-CT依据：[...]
+            🔴🔴🔴
+            """).strip()
+        else:
+            hint = ""
+
+        return base_prompt + "\n\n" + hint if hint else base_prompt
 
     # =================================================================
     # Phase 1: Evidence analysis → structured decision summary
@@ -329,11 +454,16 @@ class TreatmentDecisionAgent:
         guideline_section: str,
         trial_analysis: str,
         feedback_block: str,
+        prelim_tx: str = "",
     ) -> str:
         """
         Focused prompt: analyse evidence and make decisions.
         Only receives guideline + trial evidence + concise structured patient data.
         Output is a structured decision summary consumed by Phase 2.
+
+        prelim_tx: upstream preliminary plan from the MDT report — serves as the
+        baseline anchor.  Evidence from guidelines and trials ADJUSTS this plan,
+        it does not replace it from scratch.
         """
 
         # ── Build concise patient snapshot from structured JSON ──
@@ -378,6 +508,13 @@ class TreatmentDecisionAgent:
             🛑🛑🛑
             """).strip()
             logger.info("[TreatmentDecisionAgent] 检测到分子分型结果待回报，注入防呆指令")
+
+        # ── prelim_tx_block: intentionally disabled ──
+        # The baseline anchor created an evidence-vs-anchor conflict in Phase 1:
+        # "默认保留所有组分" vs "GOG-0258 shows no OS benefit for RT" →
+        # the model oscillated between the two positions across retries.
+        # Reverting to backup behaviour: evidence alone drives the decision.
+        prelim_tx_block = ""
 
         # ── Phase 0: Pre-extract OS data (anti-hallucination defence) ──
         verified_os_block = ""
@@ -430,6 +567,10 @@ class TreatmentDecisionAgent:
         若有任一试验的 OS 显著获益（CI 不跨 1.0 且 p < 0.05）→ 该试验支持放疗。
         → 若所有涉及放疗对比的试验 OS 均无显著获益 + 患者 ≥2 项合并症 → 决策树第二步 OS 否决触发 → 放疗免除（除非第三步绝对红线豁免：EBRT红线=淋巴结转移/宫旁阴道浸润/宫颈深浸润/切缘阳性→强制保留EBRT；VBT红线=深肌层浸润/LVSI+→至少保留单纯VBT）。
         → 若某项试验 OS 显著获益 → 核实该 HR 值确为治疗效应数据（非预后分层），确认后写入放疗依据。
+        🛑 **【终点优先级自检——OS 是金标准】**：
+        - 若某试验仅 FFS/RFS 改善但 OS 无获益 → **FFS 改善不可推翻 OS 否决**（终点优先级第二层）。
+        - 若引用的 HR > 2.0 → 几乎肯定是预后分层 HR（亚型A vs 亚型B），不是治疗效应 HR。禁止写入方案依据。
+        - 若某试验的差异组分不是放疗（如 PORTEC-3 差异组分=化疗）→ 其 OS 数据与放疗决策无关（归因红线规则二）。
         放疗决策字段必须与此自检结论严格一致。
         """).strip()
         else:
@@ -447,13 +588,19 @@ class TreatmentDecisionAgent:
         → 若所有涉及放疗对比的试验 OS 均无显著获益 + 患者 ≥2 项合并症 → 决策树第二步 OS 否决触发 → 放疗免除（除非第三步绝对红线豁免：EBRT红线=淋巴结转移/宫旁阴道浸润/宫颈深浸润/切缘阳性→强制保留EBRT；VBT红线=深肌层浸润/LVSI+→至少保留单纯VBT）。
         → 若某项试验 OS 显著获益 → 回到该试验上方原文逐字核实该 HR 值是否确为治疗效应数据、是否确实来自该试验。核实确认后再写入放疗依据。
         放疗决策字段必须与此自检结论严格一致。
+        🛑 **【终点优先级自检——OS 是金标准】**：
+        - 若某试验仅 FFS/RFS 改善但 OS 无获益 → **FFS 改善不可推翻 OS 否决**（终点优先级第二层）。
+        - 若引用的 HR > 2.0 → 几乎肯定是预后分层 HR（亚型A vs 亚型B），不是治疗效应 HR。禁止写入方案依据。
+        - 若某试验的差异组分不是放疗（如 PORTEC-3 差异组分=化疗）→ 其 OS 数据与放疗决策无关（归因红线规则二）。
         🔴 所有数值从上方循证数据逐字提取。中文描述，数值保留原文。
         """).strip()
 
         prompt = prompt_manager.get("treatment_phase1_decision").format(
+            prelim_tx_block=prelim_tx_block,
             verified_os_block=verified_os_block,
             feedback_block=feedback_block,
             pending_note=pending_note,
+            self_check_section=self_check_section,
             diagnosis=diagnosis,
             pathology=pathology,
             comorbidity_count=comorbidity_count,
@@ -461,6 +608,9 @@ class TreatmentDecisionAgent:
             guideline_section=guideline_section,
             trial_analysis=trial_analysis,
         )
+
+        # Save base prompt to rebuild clean retry prompts (no accumulation)
+        base_prompt = prompt
 
         for attempt in range(3):
             try:
@@ -477,11 +627,32 @@ class TreatmentDecisionAgent:
                             f"[TreatmentDecisionAgent] Phase 1 决策摘要内部矛盾: "
                             f"{consistency_issue}，重试中... ({attempt+1})"
                         )
+                        if attempt < 2:
+                            prompt = self._build_retry_prompt(
+                                base_prompt, "consistency", consistency_issue,
+                            )
+                        continue
+                    # Validate: all required fields must have non-empty values
+                    empty_fields = self._check_empty_decision_fields(content)
+                    if empty_fields:
+                        logger.warning(
+                            f"[TreatmentDecisionAgent] Phase 1 决策字段为空: "
+                            f"{', '.join(empty_fields)}，重试中... ({attempt+1})"
+                        )
+                        if attempt < 2:
+                            prompt = self._build_retry_prompt(
+                                base_prompt, "empty_fields",
+                                ", ".join(empty_fields),
+                            )
                         continue
                     return content
                 logger.warning(
                     f"[TreatmentDecisionAgent] Phase 1 输出缺少决策标记，重试中... ({attempt+1})"
                 )
+                if attempt < 2:
+                    prompt = self._build_retry_prompt(
+                        base_prompt, "missing_markers", "",
+                    )
             except asyncio.CancelledError:
                 raise
             except Exception as e:
@@ -538,8 +709,36 @@ class TreatmentDecisionAgent:
                 )
                 content = remove_think_tags(response.content).strip()
                 content = strip_llm_preamble(content)
+                # Phase 2 safety: must contain the format marker AND
+                # must NOT contain meta-commentary about empty fields
                 if "肿瘤专科最终方案" in content:
-                    return content
+                    _leaked_meta = re.search(
+                        r'(?:字段为空|无信息可供输出|无法进行具体评估|无具体决策依据)',
+                        content,
+                    )
+                    if _leaked_meta:
+                        logger.warning(
+                            f"[TreatmentDecisionAgent] Phase 2 输出含元评注泄漏"
+                            f" '{_leaked_meta.group()}'，重试中... ({attempt+1})"
+                        )
+                        if attempt < 1:
+                            # Inject fallback: tell LLM to use prelim_tx, not self-generate
+                            fallback_instruction = textwrap.dedent(f"""
+                            🔴🔴🔴 **【上一轮输出含元评注泄漏——强制回退】** 🔴🔴🔴
+                            你的上一轮输出中出现了"字段为空""无信息可供输出"等元评注，
+                            这违反了核心约束 5b。
+
+                            🛑 **你必须回退到上游初步方案中的对应内容来填补缺失字段**，
+                            不得凭空编造。上游初步方案如下：
+                            ---
+                            {prelim_tx if prelim_tx else "（上游初步方案未提供——此时可基于患者背景上下文合理填补，但仍禁止输出元评注）"}
+                            ---
+                            🔴🔴🔴
+                            """).strip()
+                            prompt = prompt + "\n\n" + fallback_instruction
+                            continue
+                    else:
+                        return content
                 logger.warning(
                     f"[TreatmentDecisionAgent] Phase 2 输出缺少格式标记，重试中... ({attempt+1})"
                 )

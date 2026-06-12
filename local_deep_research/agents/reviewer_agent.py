@@ -537,8 +537,36 @@ class ReviewerAgent:
                 (r'宫颈癌筛查', '宫颈癌筛查'),
                 (r'HPV.*宫颈(?!管|口|癌前|上皮|间质|内膜|肌瘤)(?:病变|细胞学|筛查|刮片|涂片|取样|检查)', 'HPV宫颈取样/筛查'),
             ]
+            # Negation phrases that indicate the report is already correctly
+            # stating that cervical screening is NOT applicable — these should
+            # NOT be flagged as ghost-organ errors.
+            _NEGATION_WINDOW = 60  # chars before and after match to check
+            _NEGATION_PATTERNS = [
+                r'宫颈筛查不适用',
+                r'无宫颈[，,]\s*常规宫颈筛查不适用',
+                r'已行全子宫切除术[，,]\s*无宫颈',
+                r'不推荐.*宫颈',
+                r'不适用.*宫颈',
+                r'宫颈.*不适用',
+                r'不存在宫颈',
+                r'无需.*宫颈筛查',
+                r'宫颈筛查.*(?:无需|不)',
+            ]
             for pattern, desc in cervix_error_patterns:
                 for m in re.finditer(pattern, report):
+                    match_start = m.start()
+                    match_end = m.end()
+                    # Extract surrounding context for negation check
+                    ctx_start = max(0, match_start - _NEGATION_WINDOW)
+                    ctx_end = min(len(report), match_end + _NEGATION_WINDOW)
+                    surrounding = report[ctx_start:ctx_end]
+                    # Skip if the surrounding context explicitly negates the finding
+                    if any(re.search(neg_pat, surrounding) for neg_pat in _NEGATION_PATTERNS):
+                        logger.debug(
+                            f"[Reviewer] 幽灵宫颈检查：跳过「{m.group(0)[:60]}」——"
+                            f"上下文已包含否定声明（如'不适用''无宫颈'等）"
+                        )
+                        continue
                     context = m.group(0)[:80]
                     issues.append(
                         f"解剖学错误（幽灵宫颈）：患者已行全子宫切除术（无宫颈），"
@@ -998,19 +1026,21 @@ class ReviewerAgent:
             if issues_lines:
                 issues_text = "\n".join(issues_lines)
                 block_lines = [
-                    "🔴🔴🔴 **【错题本核销——上一轮你要求修改的问题清单】** 🔴🔴🔴",
+                    "🔴 **【错题本核销——上一轮标记的问题清单】**",
                     "",
                     issues_text,
                     "",
-                    "**【你的验收任务——核销历史问题优先于寻找新问题】**：",
-                    "这是作者提交的第N次修改稿。你现在的首要任务不是寻找新问题，",
-                    "而是**逐一核销**上述问题是否被真正解决：",
-                    "1. 作者是否在修改稿中修正了你指出的HR数值、临床试验名称或错误引用？",
-                    "2. 作者是否在使用偷换概念（如改变主语、替换表述）的方式绕开问题？",
-                    "3. 如果上述任何一条问题依然存在，或作者通过钻空子绕开了问题但逻辑依然错误",
-                    " → 必须打回，输出格式：",
-                    "  - [主要方案] 拒绝通过：你并未修复上一轮指出的核心数据错误：[重复描述该问题]",
-                    "4. 只有当所有历史问题都已被完美解决，你才能输出 PASS。",
+                    "**【验收任务——核销历史问题，但允许纠偏】**：",
+                    "这是作者提交的修改稿。请逐一核实上述问题是否被解决：",
+                    "1. 作者是否已修正你指出的具体错误（如HR数值、试验名称、错误引用）？",
+                    "2. 如果作者以不同的措辞表达了相同的意思但逻辑正确 → 通过。",
+                    "   不要因为措辞变化而打回——关注实质而非形式。",
+                    "3. **如果经你再次核实，发现原问题实际上是误报（false positive）**",
+                    "   → 在输出中注明'[原问题已核实为误报——通过]'，不再计入新问题。",
+                    "   例：原文已正确注明'不适用''无宫颈'但你上次未注意到 → 主动承认并通过。",
+                    "4. 只有当所有历史问题都已被修正或确认为误报，你才能输出 PASS。",
+                    "5. 如果同一问题已被标记≥2次但作者始终以合理方式处理 → 视为争议问题，",
+                    "   输出 PASS 并注明'[争议问题——建议人工复核]'。",
                     "",
                 ]
                 previous_issues_block = "\n".join(block_lines)

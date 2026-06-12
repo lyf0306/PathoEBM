@@ -170,7 +170,7 @@ class ArticleProcessingMixin:
 
         lighthouse_trials = [
             "GOG-99", "PORTEC-1", "PORTEC-2", "PORTEC-3", "GOG-0258",
-            "GOG-209", "NRG-GY018", "RUBY", "ATTEND", "DUO-E",
+            "GOG-209", "NRG-GY018", "RUBY",
             "KEYNOTE-775", "PORTEC-4a"
         ]
 

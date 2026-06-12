@@ -21,11 +21,34 @@ env/
 .DS_Store
 Thumbs.db
 
-# Environment variables
+# Environment & secrets
 .env
 .env.local
 .env.*
+*.secrets.toml
+deploy_config.toml
 
 # Debug outputs
 debug_*.json
 debug_items.txt
+debug_*.log
+
+# Intermediate results & data dumps
+middleresult.txt
+*_output.txt
+*.pkl
+
+# Patient data & test data files
+*test*.txt
+!tests/
+!test_*.py
+!*_test.py
+
+# Generated reports (may contain patient-specific data)
+evidence_update_report.md
+
+# Claude AI assistant metadata
+.claude/
+
+# Job output storage
+jobs_output/

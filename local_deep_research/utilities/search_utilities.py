@@ -325,13 +325,14 @@ _LLM_PREAMBLE_RE = re.compile(
     re.IGNORECASE,
 )
 
-_LLM_META_SEP_RE = re.compile(r'^.*?^---\s*$', re.MULTILINE | re.DOTALL)
-
 # 中文编号标题：匹配行首 "1、" "1." "## 一、" 等章节开头
 _LLM_NUMBERED_HEADER_RE = re.compile(
     r'^.*?^(?=\d+[、.]|##\s+[一二三四五六七八九十\d]+[、.])',
     re.MULTILINE | re.DOTALL,
 )
+
+# 定位独立成行的 --- 分隔线
+_SEP_LINE_RE = re.compile(r'^---\s*$', re.MULTILINE)
 
 
 def strip_llm_preamble(text: str) -> str:
@@ -339,28 +340,48 @@ def strip_llm_preamble(text: str) -> str:
 
     策略：
     1. 以第一个 --- 为界（LLM 常用的元/正文分隔符）。
+       使用 re.search 定位 --- 行的位置，而非从开头匹配，
+       确保能正确判断 --- 之前的文本是否为正文。
     2. 如无 ---，以第一个中文编号标题为界（如 "1、**合并症管理**"）。
     3. 否则仅移除行首的简单礼貌语（好的、OK 等）。
+
+    安全网：如果分隔符之前的文本包含 Markdown 标题（#）或多于
+    2 个有序列表项（数字.），则判定为正文内容，拒绝裁剪，
+    防止误删 LLM 使用 --- 水平线分隔的正文章节。
     """
     if not text:
         return text
-    # 策略 1：以第一个 --- 为界
-    m = _LLM_META_SEP_RE.match(text)
-    if m and m.end() > 3 and len(text) - m.end() > 60:
-        prefix_len = len(text[:m.start()].strip())
-        if prefix_len < 600:
-            text = text[m.end():]
+
+    def _looks_like_body(prefix: str) -> bool:
+        """Heuristic: if the prefix contains markdown headings or
+        multiple numbered-list items, it is likely report body,
+        not conversational preamble."""
+        if re.search(r'^#{1,3}\s', prefix, re.MULTILINE):
+            return True
+        # Count numbered list items (e.g. "1. " or "1、")
+        num_items = len(re.findall(r'^\d+[、.] ', prefix, re.MULTILINE))
+        if num_items >= 3:
+            return True
+        return False
+
+    # 策略 1：以第一个 --- 为界（使用 search 定位，而非 match）
+    m = _SEP_LINE_RE.search(text)
+    if m and m.start() > 0 and len(text) - m.end() > 60:
+        prefix = text[:m.start()].strip()
+        remaining = text[m.end():].strip()
+        if not _looks_like_body(prefix) and len(prefix) < 300 and len(remaining) > 60:
+            text = remaining
     else:
         # 策略 2：以第一个中文编号标题为界
         m2 = _LLM_NUMBERED_HEADER_RE.match(text)
         if m2 and m2.end() > 3 and len(text) - m2.end() > 60:
-            prefix_len = len(text[:m2.end()].strip())
-            if prefix_len < 600:
+            prefix = text[:m2.end()].strip()
+            if not _looks_like_body(prefix) and len(prefix) < 300:
                 text = text[m2.end():]
         else:
             # 策略 3：移除行首简单礼貌语
             text = _LLM_PREAMBLE_RE.sub('', text, count=1)
-    # 清理残留的 --- 分隔线
+    # 清理残留的 --- 分隔线（被裁剪后可能留下的）
     text = re.sub(r'^\s*---\s*\n+', '', text)
     return text.strip()
 

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 import textwrap
 
 from ..utilities.search_utilities import invoke_with_timeout_and_retry, remove_think_tags
@@ -78,7 +79,12 @@ class PrognosisAgent:
 
         🔴 **【中文输出——全字段强制要求】**：所有描述性文字必须使用中文，数值和统计量保留原文。**绝对禁止**直接复制粘贴英文段落。
 
-        【输出格式——单段连贯叙述，禁止分节重复。直接输出以下章节，将被拼接至最终报告】：
+        【🔒 输出前内部自检——仅供你核实数据，绝对禁止出现在最终回答中】：
+        1. FIGO 版本和分期是否与结构化字段一致（优先 2023）？
+        2. 通篇是否只出现一套百分数（来自 SEER 表的分期匹配行），没有重复出现？
+        3. 引用的每一个数字是否都确实存在于 SEER 表中，没有编造？
+
+        【输出格式——直接输出以下内容（不要包含上方自检清单）】：
 
         ## 三、 预后分析
 
@@ -88,11 +94,6 @@ class PrognosisAgent:
         （如表中仅报告了其他指标如 DSS/RFS，如实注明）
 
         综合判断：[1-2 句话总结上述生存率数据，不做数学加法，不编造合成数字]
-
-        ⚠️ **输出前强制自检**：
-        - 确认 FIGO 版本和分期与结构化字段一致（优先 2023）
-        - 通篇只出现一套百分数（来自 SEER 表的分期匹配行），没有重复出现
-        - 没有编造任何表中不存在的数字
         """)
 
         for attempt in range(2):
@@ -100,9 +101,30 @@ class PrognosisAgent:
                 res = await invoke_with_timeout_and_retry(
                     self.report_model, prompt, timeout=180.0, max_retries=2
                 )
-                return remove_think_tags(res.content).strip()
+                raw = remove_think_tags(res.content).strip()
+                # Safety net: strip leaked self-check block
+                raw = self._strip_leaked_selfcheck(raw)
+                return raw
             except asyncio.CancelledError:
                 raise
             except Exception:
                 pass
         return "（预后生存率数据提取失败，请参考 SEER/NCDB 公开数据。）"
+
+    @staticmethod
+    def _strip_leaked_selfcheck(text: str) -> str:
+        """Remove leaked self-check instructions the model may have echoed."""
+        # Pattern: "⚠️ 输出前强制自检" or "输出前内部自检" followed by bullet points
+        text = re.sub(
+            r'\n?⚠️\s*\*?\*?输出前(?:强制)?自检\*?\*?\s*[：:]\s*'
+            r'(?:[\-•]\s*[^\n]+\n?)+',
+            '', text
+        )
+        # Also catch the rewritten version: "输出前内部自检——..."
+        text = re.sub(
+            r'\n?【?🔒\s*输出前内部自检[^】]*】?.*?(?=\n##\s|\Z)',
+            '', text, flags=re.DOTALL
+        )
+        # Clean up leading blank lines
+        text = re.sub(r'^\n+', '', text)
+        return text.strip()

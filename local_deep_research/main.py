@@ -1210,24 +1210,27 @@ async def run_evidence_update(treatment_context: str, model_choice: str = "auto"
              # 4. 完美拼接与【次要异常的拦截转诊】
              new_evidence_text = final_resp_text
              new_refs_text = ""
-             split_marker = "=================================================="
-             
-             if split_marker in final_resp_text:
-                 parts = final_resp_text.split(split_marker)
+
+             # ReAct 输出中的参考文献以 separator（"========== 参考文献 =========="）开头，
+             # 而不是 bare "=================================================="。
+             # 用 separator 拆分才能正确分离正文与新文献。
+             if separator in final_resp_text:
+                 parts = final_resp_text.split(separator, 1)
                  new_evidence_text = parts[0].strip()
                  new_refs_text = parts[1].strip()
-             
+
              # 将重写后的终极正文、次要并发症转诊、旧文献列表、新文献列表按序无缝缝合
+             # baseline_refs（指南/基础文献 [1]-[N]）在前，new_refs_text（深搜新文献 [N+1]-[M]）在后
              combined_report = f"### 🏥 循证校验与优化的最终治疗方案 (Deep EBM Synthesized Plan)\n\n" \
                                f"{new_evidence_text}\n" \
                                f"\n{separator}\n" \
                                f"{baseline_refs}\n"
-             
+
              if new_refs_text:
                  combined_report += f"{new_refs_text}\n"
-             
+
              print(combined_report)
-             
+
              # 保存到文件
              report_path = "evidence_update_report.md"
              with open(report_path, "w", encoding="utf-8") as f:

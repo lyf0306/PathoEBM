@@ -46,6 +46,8 @@ class ReportGenerationMixin:
 
         # ── Save full evidence before any truncation ──
         full_raw_evidence = current_knowledge
+        # Expose for fallback reference extraction
+        self._full_raw_evidence = full_raw_evidence
 
         if len(current_knowledge) > 25000:
             logger.warning(f"current_knowledge 过长 ({len(current_knowledge)} 字符)，正在执行安全截断...")
@@ -318,7 +320,36 @@ class ReportGenerationMixin:
                 f"{ {s: len(v) for s, v in accumulated_issues.items()} }"
             )
 
+            # ── False-positive / stalemate detection ──
+            # If the same section keeps getting flagged across cycles without
+            # resolution, treat it as a potential false positive and break.
+            if cycle >= 1:
+                sections_to_drop = []
+                for section, cur_items in issues_by_section.items():
+                    acc_count = len(accumulated_issues.get(section, []))
+                    cur_count = len(cur_items)
+                    if acc_count >= 4 and cur_count > 0:
+                        logger.warning(
+                            f"[Reviewer] ⚠️ 检测到 [{section}] 章节累计被标记 "
+                            f"{acc_count} 次（本轮新增 {cur_count} 个），"
+                            f"可能存在误报或争议——跳过该章节的重生成"
+                        )
+                        sections_to_drop.append(section)
+                for section in sections_to_drop:
+                    issues_by_section.pop(section, None)
+
+                # If all current issues were detected as stalemate, break
+                if not issues_by_section:
+                    logger.warning(
+                        "[Reviewer] 所有剩余问题被判定为潜在误报/争议，终止审查循环"
+                    )
+                    break
+
             total_issues = sum(len(v) for v in issues_by_section.values())
+            if total_issues == 0:
+                logger.info(f"[Reviewer] {cycle_label}无有效新问题，审查通过。")
+                break
+
             logger.warning(
                 f"[Reviewer] {cycle_label}发现 {total_issues} 个问题"
                 f"（{list(issues_by_section.keys())}），触发 agent 重生成..."
@@ -469,6 +500,13 @@ class ReportGenerationMixin:
 
         # Post-process references
         try:
+            # Diagnostic: count [^^n] markers before reindexing
+            _n_citations = len(re.findall(r'\[\^\^(\d+)\]', content))
+            _n_pool = len(self.ref_pool.pool) if self.ref_pool else 0
+            logger.info(
+                "[Refs] reindex前: 报告中有 %d 个 [^^n] 引用标记, ref_pool中有 %d 条文献",
+                _n_citations, _n_pool,
+            )
             new_content, refs_section = self.ref_pool.reindex_references(content)
 
             # Strip ref_anchor HTML comments (from _trim_visible_refs safety net)
@@ -506,7 +544,65 @@ class ReportGenerationMixin:
             raise
         except Exception as e:
             logger.error(f"Failed to post-process references: {e}")
-            fallback_refs = "\n==================================================\n"
-            for i, ref in enumerate(self.ref_pool.pool, self.ref_pool.base_idx + 1):
-                fallback_refs += f"[{i}] {self.ref_pool.display_label(i)}\n    Title: {ref.title or ref.link}\n----------\n"
+            fallback_refs = self._build_fallback_reference_list(
+                current_knowledge + "\n" + getattr(self, '_full_raw_evidence', '')
+            )
             return current_knowledge + fallback_refs, current_knowledge + fallback_refs
+
+    # =================================================================
+    # Fallback reference extraction: scan raw evidence for PMIDs / URLs
+    # =================================================================
+    @staticmethod
+    def _build_fallback_reference_list(raw_text: str) -> str:
+        """
+        Scan *raw_text* for PubMed PMIDs / URLs and build a minimal
+        reference list when the normal ref_pool → reindex_references
+        pipeline produced an empty result.
+
+        This is a safety net: it guarantees the report always carries a
+        discoverable reference section, even when the structured ref_pool
+        is empty or citation markup was lost during synthesis.
+        """
+        # Extract unique PMIDs in order of first appearance
+        seen: set[str] = set()
+        refs: list[str] = []
+
+        for m in re.finditer(
+            r'(?:pubmed\.ncbi\.nlm\.nih\.gov/|PMID[: ]?\s*)(\d{7,9})',
+            raw_text, re.IGNORECASE,
+        ):
+            pmid = m.group(1)
+            if pmid not in seen:
+                seen.add(pmid)
+                refs.append(
+                    f"[{len(refs) + 1}] PMID: {pmid}\n"
+                    f"    Title: (请参见原始检索结果)\n"
+                    f"    Guidelines: 前沿证据合成 (Deep Research)\n"
+                    "----------"
+                )
+
+        # Also catch ClinicalTrials.gov NCT IDs
+        for m in re.finditer(
+            r'(?:clinicaltrials\.gov/study/|NCT)(\d{8})',
+            raw_text, re.IGNORECASE,
+        ):
+            nct = m.group(1)
+            nct_full = f"NCT{nct}"
+            if nct_full not in seen:
+                seen.add(nct_full)
+                refs.append(
+                    f"[{len(refs) + 1}] {nct_full}\n"
+                    f"    Title: (请参见原始检索结果)\n"
+                    f"    Guidelines: 前沿证据合成 (Deep Research)\n"
+                    "----------"
+                )
+
+        if not refs:
+            return "\n==================================================\n（无参考文献）\n"
+
+        header = (
+            "==================== 参考文献 (References) "
+            "====================\n"
+        )
+        return header + "\n".join(refs) + "\n"
+

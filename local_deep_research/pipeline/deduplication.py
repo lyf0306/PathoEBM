@@ -42,7 +42,7 @@ class DeduplicationMixin:
             r'(?i)'
             r'(endometri|uterine|uterus|womb|'
             r'gynecolog|gyn[aec]|cervical|ovarian|vulvar|vaginal|'
-            r'PORTEC|GOG|NRG|RUBY|ATTEND|DUO|KEYNOTE|'
+            r'PORTEC|GOG|NRG|RUBY|KEYNOTE|'
             r'子宫|内膜|宫颈|卵巢|妇科|外阴|阴道|输卵管|盆腔|附件)'
         )
 
@@ -429,12 +429,6 @@ class DeduplicationMixin:
             "GOG-209": (     # Stage IVB / recurrent (chemotherapy)
                 lambda: is_stage4b or is_recurrent
             ),
-            "ATTEND": (      # Stage IVB / recurrent (immunotherapy)
-                lambda: is_stage4b or is_recurrent
-            ),
-            "DUO-E": (       # Stage IVB / recurrent (immunotherapy)
-                lambda: is_stage4b or is_recurrent
-            ),
             # ── Second-line ──
             "KEYNOTE-775": ( # Second-line / recurrent
                 lambda: is_recurrent
@@ -442,19 +436,39 @@ class DeduplicationMixin:
         }
 
         # Split by emoji headers ONLY — never split on individual paper titles
+        # Primary regex: #### 🎯 / #### 🧬 / #### 🏥
         sections = re.findall(
             r'#### [🎯🧬🏥].+?(?=\n#### [🎯🧬🏥]|\Z)',
             trial_analysis, re.DOTALL
         )
+
+        # Fallback: sections may lack #### prefix after consolidation passes
         if not sections:
+            sections = re.findall(
+                r'(?:^|\n)(🎯[^\n]*\n.+?)(?=\n🎯|\n🧬|\n🏥|\Z)',
+                trial_analysis, re.DOTALL
+            )
+            if sections:
+                logger.warning(
+                    "[相关性过滤] 使用降级正则（无####前缀），"
+                    "匹配到 %d 个试验段落", len(sections)
+                )
+
+        if not sections:
+            logger.warning(
+                "[相关性过滤] 未匹配到任何试验段落（既无####也无emoji标记），"
+                "跳过试验相关性过滤。诊断字段: %s",
+                diagnosis[:80] if diagnosis else "(空)"
+            )
             return trial_analysis
 
         kept = []
         removed = []
 
         for sec in sections:
-            first_line = sec.split('\n')[0]
-            section_label = re.sub(r'^####\s*[🎯🧬🏥]\s*', '', first_line).strip()
+            first_line = sec.split('\n')[0].strip()
+            # Strip heading markers: #### 🎯, 🎯, #### 🧬, etc.
+            section_label = re.sub(r'^(?:####\s*)?[🎯🧬🏥]\s*', '', first_line).strip()
 
             trial_acronym_match = re.search(
                 r'\b([A-Z]+-\d+[A-Za-z]*)\b', section_label

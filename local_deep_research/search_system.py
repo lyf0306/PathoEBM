@@ -91,6 +91,7 @@ from .utilities.search_utilities import (
     ensure_chinese_output,
     invoke_with_timeout_and_retry,
     remove_think_tags,
+    strip_llm_preamble,
     write_log_process_safe,
 )
 
@@ -173,7 +174,7 @@ def get_global_semaphores():
 
 # ── Core clinical trial keywords for differentiated ReAct rounds ──
 _LIGHTHOUSE_TRIAL_PATTERNS = re.compile(
-    r'\b(PORTEC-(1|2|3|4a?|4)|GOG-(99|0258|209)|NRG-GY018|RUBY|ATTEND|DUO-E|KEYNOTE-775)\b',
+    r'\b(PORTEC-(1|2|3|4a?|4)|GOG-(99|0258|209)|NRG-GY018|RUBY|KEYNOTE-775)\b',
     re.IGNORECASE,
 )
 
@@ -538,6 +539,8 @@ class AdvancedSearchSystem(
                         display_query = str(payload)
 
                     synthesis = result.get("synthesis", "") if isinstance(result, dict) else str(result)
+                    # Strip LLM conversational preamble from each branch
+                    synthesis = strip_llm_preamble(synthesis)
 
                     # Log completion
                     syn_text = synthesis if isinstance(result, dict) else str(result)
@@ -703,10 +706,16 @@ class AdvancedSearchSystem(
                 raise
             except Exception as e:
                 logger.warning(f"Failed to generate detailed report: {e}")
+                # Try ref_pool first, fall back to raw-evidence PMID scan
                 fallback_refs = "\n==================================================\n"
-                for i, ref in enumerate(self.ref_pool.pool, self.ref_pool.base_idx + 1):
-                    title = ref.title if ref.title else "Source"
-                    fallback_refs += f"[{i}] {self.ref_pool.display_label(i)}\n    Title: {title}\n----------\n"
+                if self.ref_pool.pool:
+                    for i, ref in enumerate(self.ref_pool.pool, self.ref_pool.base_idx + 1):
+                        title = ref.title if ref.title else "Source"
+                        fallback_refs += f"[{i}] {self.ref_pool.display_label(i)}\n    Title: {title}\n----------\n"
+                else:
+                    fallback_refs = self._build_fallback_reference_list(
+                        current_knowledge + "\n" + getattr(self, '_full_raw_evidence', '')
+                    )
                 final_report = current_knowledge + fallback_refs
 
         self._timer.lap("报告生成")
